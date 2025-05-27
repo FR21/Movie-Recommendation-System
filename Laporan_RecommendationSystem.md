@@ -112,3 +112,63 @@ Berikut adalah hasil dari tahap _Data Preparation_ yang telah dilakukan pada pen
 
 
 ![Movie_Pre](./assets/movie_pre.png)
+
+### **2. Collaborative Filtering**
+Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Collaborative Filtering_ sebagai berikut:
+-  **`Feature reduction`**: Pada tahap ini, kolom _timestamp_ dihapus dari data _rating_ karena informasi waktu tidak digunakan dalam proses pemodelan _Collaborative Filtering_. Alasannya adalah kolom _timestamp_ tidak memberikan kontribusi terhadap pembelajaran preferensi pengguna terhadap film dalam pendekatan _matrix factorization_ atau _neural collaborative filtering_ (NCF). Mengurangi dimensi data juga membantu menyederhanakan proses pelatihan model.
+    ```python
+    # Drop unnecessary columns: Timestamp
+    ratings = ratings.drop(columns='timestamp')
+    ratings.head()
+    ```
+
+-  **`Entity extraction`**: Berikutnya adalah mengambil daftar unik dari pengguna (userId) dan film (movieId) yang terdapat dalam dataset _rating_. Di mana kita mengidentifikasi entitas dasar yang terlibat dalam sistem rekomendasi, yaitu pengguna dan item (film). Alasan dilakukannya tahapan ini adalah karena _Collaborative Filtering_ memerlukan representasi eksplisit dari pengguna dan item dalam bentuk _embedding_. Dengan mengekstrak pengguna dan film unik, kita dapat menentukan ukuran dimensi _embedding_ serta memetakan setiap pengguna dan film ke dalam ID indeks numerik yang konsisten dalam proses pelatihan model.
+    ```python
+    # Extract the list of unique users from the ratings dataset
+    unique_users = ratings['userId'].drop_duplicates().tolist()
+    # Extract the list of unique movies from the ratings dataset
+    unique_movies = ratings['movieId'].drop_duplicates().tolist()
+    ```
+    
+-  **`Index encoding`**: Langkah ini bertujuan untuk mengubah userId dan movieId asli yang bersifat non-sekuensial menjadi indeks numerik berurutan yang dimulai dari nol. Proses ini penting karena model seperti NCF memerlukan input dalam bentuk indeks integer yang akan digunakan untuk _embedding lookups_. _Embedding layers_ dalam TensorFlow hanya menerima input berupa indeks numerik untuk memetakan ke vektor fitur laten. Oleh karena itu, pemetaan ini membantu menciptakan representasi yang efisien dan terstruktur untuk pengguna dan item, serta memastikan keselarasan antara data dan model selama pelatihan.
+    ```python
+    # Create dictionaries to map original userId and movieId to integer indices
+    user_mapping = {user_id: idx for idx, user_id in enumerate(unique_users)}
+    movie_mapping = {movie_id: idx for idx, movie_id in enumerate(unique_movies)}
+    ```
+    
+-  **`Index transformation`**: Langkah ini bertujuan untuk membuat dua kolom baru, yaitu user_index dan movie_index, yang berisi representasi numerik dari masing-masing userId dan movieId. Alasan utama dilakukannya transformasi ini adalah karena model NCF tidak dapat langsung bekerja dengan ID asli yang tidak terstruktur atau terlalu besar rentangnya. Dengan memetakan ke indeks numerik, data menjadi kompatibel untuk dimasukkan ke dalam layer _embedding_ dalam model _Deep Learning_. Hal ini juga membantu menghemat memori dan mempercepat proses pelatihan, karena indeks ini akan digunakan sebagai referensi untuk mengambil representasi vektor dari pengguna dan film selama proses _forward pass_ pada model.
+    ```python
+   # Apply the mapping dictionaries to the ratings dataframe to create new columns with integer indices
+    ratings['user_index'] = ratings['userId'].apply(lambda x: user_mapping[x])
+    ratings['movie_index'] = ratings['movieId'].apply(lambda x: movie_mapping[x])
+    ```    
+    
+-  **`Normalization`**: Langkah ini bertujuan untuk mengubah nilai _rating_ asli yang berada pada rentang 0.5 hingga 5.0 menjadi skala antara 0 hingga 1. Alasan dilakukan normalisasi adalah karena model _neural network_ lebih optimal ketika fitur _input_ berada dalam skala yang seragam. Tanpa normalisasi, nilai _rating_ yang besar bisa mendominasi pembelajaran dan menghambat konvergensi model. Dengan mengubah nilai _rating_ ke skala 0–1, model dapat mempelajari hubungan secara lebih stabil dan akurat antara pengguna dan film dalam proses _training_.
+    ```python
+   # Find the minimum and maximum rating values
+    min_rating = ratings['rating'].min()
+    max_rating = ratings['rating'].max()
+    
+    # Normalize the 'rating' column to a scale from 0 to 1
+    def normalize_rating(r):
+        return (r - min_rating) / (max_rating - min_rating)
+    ratings['rating_normalized'] = ratings['rating'].map(normalize_rating)
+    ```        
+
+-  **`Data splitting and sampling`**: Langkah ini bertujuan untuk menyiapkan data masukan dan keluaran model serta membaginya menjadi data pelatihan dan data validasi. Dataset diacak terlebih dahulu agar distribusi data acak dan tidak bias berdasarkan urutan. Kemudian, _features_ (input) terdiri dari indeks pengguna dan indeks film, sedangkan _targets_ (output) adalah _rating_ yang telah dinormalisasi. Pembagian dilakukan dengan rasio 80% data pelatihan dan 20% data validasi, untuk memastikan model dapat dilatih secara efektif dan diuji pada data yang tidak pernah dilihat sebelumnya. Alasan dari pembagian ini adalah untuk mengevaluasi performa model pada data yang belum dikenal, sehingga kita bisa mendeteksi apakah model mengalami _overfitting_ atau generalisasi dengan baik terhadap data baru.
+    ```python
+   # Shuffle the dataset to ensure random distribution of samples
+    shuffled_ratings = ratings.sample(frac=1, random_state=42).reset_index(drop=True)
+    # Extract input features: user and movie indices
+    features = shuffled_ratings[['user_index', 'movie_index']].to_numpy()
+    # Extract target output: normalized ratings
+    targets = shuffled_ratings['rating_normalized'].to_numpy()
+    # Calculate the cutoff index for 80% training data
+    train_cutoff = int(0.8 * len(shuffled_ratings))
+    # Split data into training and validation sets
+    X_train = features[:train_cutoff]
+    X_val = features[train_cutoff:]
+    y_train = targets[:train_cutoff]
+    y_val = targets[train_cutoff:]
+    ```        
