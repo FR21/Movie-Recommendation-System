@@ -38,3 +38,29 @@ Pendekatan ini merekomendasikan film berdasarkan pola interaksi antar pengguna d
     - Menggeneralisasi teknik _matrix factorization_ melalui pembelajaran fitur laten pengguna dan item menggunakan _embedding layers_.
     - Memungkinkan pemodelan interaksi non-linear yang lebih kompleks dan akurat daripada _collaborative filtering tradisional_.
     - Efektif dalam menangkap preferensi implisit pengguna dari data interaksi, seperti _rating_.
+
+## Data Understanding
+Dataset yang digunakan dalam proyek ini diperoleh dari platform Kaggle dengan judul **`MovieLens Small Latest Dataset`**. Dataset ini merekam aktivitas _rating_ berbasis skala 5 bintang oleh pengguna terhadap film, yang dikumpulkan dari layanan rekomendasi film MovieLens. Dataset ini mencakup 100.836 rating pada 9.742 film, diberikan oleh 610 pengguna yang telah menilai minimal 20 film, dalam rentang waktu dari 29 Maret 1996 hingga 24 September 2018.
+
+ Dataset ini terdiri dari empat file utama, yaitu: 
+ - **`movies.csv`** yang berisi metadata film seperti judul dan genre.
+ - **`ratings.csv`** yang mencatat rating yang diberikan pengguna terhadap film.
+ - **`tags.csv`** yang menyimpan tag atau label bebas yang ditambahkan pengguna untuk film tertentu. 
+ - **`links.csv`** yang menyediakan referensi ID film ke database eksternal seperti IMDb dan TMDb. 
+
+Meskipun dataset menyediakan beragam informasi, dalam proyek ini hanya dua file yang digunakan, yaitu movies.csv dan ratings.csv, karena keduanya merupakan komponen utama dalam membangun sistem rekomendasi berbasis konten dan perilaku pengguna.
+
+File movies.csv terdiri dari 9.742 baris dan 3 kolom, sementara ratings.csv memuat 100.836 baris dan 4 kolom. Berdasarkan hasil pemeriksaan awal, tidak ditemukan adanya nilai kosong (missing values) maupun data duplikat di kedua file tersebut, sehingga data dapat langsung digunakan dalam proses analisis dan pembangunan model tanpa perlu dilakukan pembersihan tambahan.
+
+Link Dataset: https://www.kaggle.com/datasets/shubhammehta21/movie-lens-small-latest-dataset
+
+### Variabel-variabel pada movies.csv sebagai berikut:
+- **`movieId`** (Integer): ID unik untuk setiap film. Digunakan untuk menghubungkan dengan file lainnya seperti ratings.csv.
+- **`title`** (String): Judul lengkap film, biasanya disertai dengan tahun rilis dalam tanda kurung.
+- **`genres`** (String): Daftar genre yang dimiliki oleh film, dipisahkan dengan simbol pipe (|).
+
+### Variabel-variabel pada ratings.csv sebagai berikut:
+- **`userId`** (Integer): ID unik untuk setiap pengguna.
+- **`movieId`** (Integer): ID film yang dirating oleh pengguna, digunakan sebagai foreign key untuk menghubungkan ke movies.csv.
+- **`rating`** (Float): Nilai rating yang diberikan pengguna untuk film, dalam rentang 0.5 sampai 5.0, dengan interval 0.5.
+- **`timestamp`** (Integer): Waktu ketika rating diberikan, dalam format UNIX timestamp.
