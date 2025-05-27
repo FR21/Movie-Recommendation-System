@@ -416,7 +416,47 @@ history_ncf = model_ncf.fit(
 )
 ```
 Fungsi `get_top_n_recommendations_ncf` digunakan untuk menghasilkan rekomendasi film teratas bagi pengguna tertentu berdasarkan prediksi _rating_ dari model _Neural Collaborative Filtering_ yang telah dilatih. Fungsi ini menerima ID pengguna, daftar indeks film, serta data film sebagai _input_, kemudian memprediksi _rating_ untuk semua film yang tersedia bagi pengguna tersebut. Prediksi _rating_ ini kemudian diurutkan dari yang tertinggi, dan diambil sejumlah N film teratas sebagai rekomendasi. Selanjutnya, hasil prediksi yang berupa nilai dalam rentang 0 hingga 1 dikonversi ke skala _rating_ 0 hingga 5 untuk memudahkan interpretasi. Film-film yang direkomendasikan ditampilkan dalam urutan rating prediksi tertinggi disertai informasi judul dan ID film. Berikut adalah contoh penerapan untuk `user_id = 12`.
+```python
+# Generate top-N movie recommendations for a given user using a trained NCF model.
+def get_top_n_recommendations_ncf(model, user_id, movie_indices, movies_df, movie_mapping, N=10):
+    # Create an array with the same user_id repeated for all movies
+    user_array = np.array([user_id] * len(movie_indices))
+    # Predict ratings using the NCF model
+    predictions = model_ncf.predict([user_array, movie_indices], verbose=0).flatten()
+    # Get indices of top-N highest predicted ratings
+    top_indices = np.argsort(predictions)[::-1][:N]
+    top_movie_indices = movie_indices[top_indices]
+    top_scores = predictions[top_indices]
+    # Map embedding indices back to original movie IDs
+    index_to_movie = {idx: mid for mid, idx in movie_mapping.items()}
+    top_movie_ids = [index_to_movie[idx] for idx in top_movie_indices]
+    # Select movies from movies_df corresponding to top movie IDs
+    top_movies = movies_df[movies_df['movieId'].isin(top_movie_ids)].copy()
+    # Add columns for predicted score (0-1) and convert to rating scale 0-5
+    top_movies['predicted_score'] = top_movies['movieId'].map(dict(zip(top_movie_ids, top_scores)))
+    top_movies['predicted_rating'] = top_scores * 5.0
+     # Sort movies by predicted_rating descending and reset index starting from 1
+    top_movies = top_movies.sort_values(by='predicted_rating', ascending=False).reset_index(drop=True)
+    top_movies.index += 1
+    return top_movies[['movieId', 'title', 'predicted_rating']]
 
+# Example usage
+user_id = 12
+movie_indices = np.array(list(movie_mapping.values()))
+top_n = 10
+top_recommendations_df = get_top_n_recommendations_ncf(
+    model, user_id, movie_indices, movies, movie_mapping, N=top_n
+)
+print(top_recommendations_df)
+
+# Tweet-style output of top recommendations
+tweet_lines = [f"User {user_id} Top-{top_n} Movie Recommendations:"]
+for rank, row in top_recommendations_df.iterrows():
+    tweet_lines.append(f"{rank}. {row['title']} (ID: {row['movieId']}) - Predicted Rating: {row['predicted_rating']:.2f}")
+tweet_text = "\n".join(tweet_lines)
+print("\n--- Top 10 Movie Recommendations ---")
+print(tweet_text)
+```
 ![TopN_NCF](./assets/ncf_testing.png)
 
 Kelebihan utama dari NCF adalah fleksibilitas dan kapasitasnya dalam memodelkan relasi yang kompleks, sehingga dapat menghasilkan prediksi _rating_ yang lebih akurat. Namun demikian, model ini juga memiliki kelemahan, terutama dalam hal kebutuhan data interaksi yang besar dan komputasi yang lebih intensif. Seperti halnya RecommenderNet, NCF juga belum efektif menangani masalah _cold start_ karena tetap bergantung pada data historis pengguna dan _item_.
