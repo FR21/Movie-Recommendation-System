@@ -44,7 +44,7 @@ Dataset yang digunakan dalam proyek ini diperoleh dari platform Kaggle dengan ju
 
  Dataset ini terdiri dari empat file utama, yaitu: 
  - **`movies.csv`** yang berisi metadata film seperti judul dan genre.
- - **`ratings.csv`** yang mencatat rating yang diberikan pengguna terhadap film.
+ - **`ratings.csv`** yang mencatat _rating_ yang diberikan pengguna terhadap film.
  - **`tags.csv`** yang menyimpan tag atau label bebas yang ditambahkan pengguna untuk film tertentu. 
  - **`links.csv`** yang menyediakan referensi ID film ke database eksternal seperti IMDb dan TMDb. 
 
@@ -62,8 +62,8 @@ Link Dataset: https://www.kaggle.com/datasets/shubhammehta21/movie-lens-small-la
 ### Variabel-variabel pada ratings.csv sebagai berikut:
 - **`userId`** (Integer): ID unik untuk setiap pengguna.
 - **`movieId`** (Integer): ID film yang dirating oleh pengguna, digunakan sebagai foreign key untuk menghubungkan ke movies.csv.
-- **`rating`** (Float): Nilai rating yang diberikan pengguna untuk film, dalam rentang 0.5 sampai 5.0, dengan interval 0.5.
-- **`timestamp`** (Integer): Waktu ketika rating diberikan, dalam format UNIX timestamp.
+- **`rating`** (Float): Nilai _rating_ yang diberikan pengguna untuk film, dalam rentang 0.5 sampai 5.0, dengan interval 0.5.
+- **`timestamp`** (Integer): Waktu ketika _rating_ diberikan, dalam format UNIX timestamp.
 
 ### Visualisasi Genre Film Terpopuler berdasarkan Jumlah Film
 ![Top10_MostFrequentMovieGenres](./assets/mfmg.png)
@@ -80,4 +80,4 @@ Grafik batang vertikal berikut menggambarkan 10 genre film dengan jumlah _rating
 
 ### Visualisasi  Genre Film Terpopuler berdasarkan Rata-rata Rating
 ![Top10_GenresbyAverageRating](./assets/gbar.png)
-Visualisasi berikut menyajikan grafik batang horizontal yang menggambarkan 10 genre film dengan rata-rata _rating_ tertinggi, yang telah diurutkan dari nilai tertinggi ke terendah. Genre _Crime_ menempati posisi teratas dengan rata-rata rating sekitar 3.65, sedikit unggul dari genre Drama yang memperoleh nilai rata-rata serupa. Selanjutnya, genre _Adventure_, _Romance_, dan _Thriller_ masing-masing memiliki rata-rata _rating_ sekitar 3.5, menunjukkan bahwa film-film dengan genre tersebut cenderung mendapatkan respons positif dari penonton. Di tengah daftar, terdapat genre _Fantasy_, _Sci-Fi_, dan _Action_, yang masih mencatatkan performa baik berdasarkan penilaian pengguna. Sementara itu, dua genre yang menempati posisi terbawah dalam daftar ini adalah _Children_ dan _Comedy_, dengan rata-rata rating mendekati 3.4. Meskipun genre _Comedy_ tergolong sangat populer dari sisi jumlah produksi dan penonton, namun persepsi kualitasnya berdasarkan rating sedikit lebih rendah dibandingkan genre lainnya.
+Visualisasi berikut menyajikan grafik batang horizontal yang menggambarkan 10 genre film dengan rata-rata _rating_ tertinggi, yang telah diurutkan dari nilai tertinggi ke terendah. Genre _Crime_ menempati posisi teratas dengan rata-rata rating sekitar 3.65, sedikit unggul dari genre Drama yang memperoleh nilai rata-rata serupa. Selanjutnya, genre _Adventure_, _Romance_, dan _Thriller_ masing-masing memiliki rata-rata _rating_ sekitar 3.5, menunjukkan bahwa film-film dengan genre tersebut cenderung mendapatkan respons positif dari penonton. Di tengah daftar, terdapat genre _Fantasy_, _Sci-Fi_, dan _Action_, yang masih mencatatkan performa baik berdasarkan penilaian pengguna. Sementara itu, dua genre yang menempati posisi terbawah dalam daftar ini adalah _Children_ dan _Comedy_, dengan rata-rata rating mendekati 3.4. Meskipun genre _Comedy_ tergolong sangat populer dari sisi jumlah produksi dan penonton, namun persepsi kualitasnya berdasarkan _rating_ sedikit lebih rendah dibandingkan genre lainnya.
