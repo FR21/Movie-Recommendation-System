@@ -204,3 +204,133 @@ Pertama, kolom genre film diolah menggunakan _TF-IDF Vectorizer_ untuk menghasil
 ![TopN_ContentBasedFiltering](./assets/cbf_testing.png)
 
 Pendekatan ini sangat efektif untuk memberikan rekomendasi yang sesuai dengan preferensi genre pengguna tanpa memerlukan data _rating_ atau interaksi pengguna lainnya. Salah satu keunggulan penting dari metode ini adalah kemampuannya mengatasi masalah _cold start_, yaitu ketika pengguna atau _item_ baru belum memiliki data interaksi yang cukup untuk sistem rekomendasi berbasis kolaboratif. Namun, kekurangannya adalah sistem ini kurang mampu menangani preferensi yang kompleks yang melibatkan pola interaksi antar pengguna, sehingga rekomendasi cenderung terbatas pada kemiripan konten saja.
+
+### **2. Collaborative Filtering**
+Pada pendekatan Collaborative Filtering, sistem rekomendasi dikembangkan berdasarkan pola interaksi antara pengguna dan _item_ (film), tanpa memperhatikan konten film itu sendiri. Untuk mengimplementasikan metode ini, kami menggunakan dua model algoritma berbeda, yaitu _RecommenderNet_, sebuah jaringan saraf sederhana berbasis _embedding_, dan _Neural Collaborative Filtering_ (NCF), yang menggabungkan pendekatan generalisasi linear dan non-linear untuk menangkap hubungan kompleks antara pengguna dan _item_. Pendekatan ini memungkinkan sistem menghasilkan rekomendasi yang lebih personal dan relevan berdasarkan kesamaan preferensi antar pengguna.
+#### a.RecommenderNet
+Model **RecommenderNet** adalah arsitektur *Neural Collaborative Filtering* sederhana yang memanfaatkan _embedding_ untuk merepresentasikan fitur laten pengguna dan film. Model ini bekerja dengan mengubah indeks pengguna dan film menjadi vektor representasi berdimensi rendah (latent factors) menggunakan lapisan _embedding_, lalu menghitung interaksi antara keduanya melalui perkalian elemen demi elemen (dot product). Selain embedding, model ini juga menyertakan _bias_ khusus untuk setiap pengguna dan film, serta menerapkan teknik _dropout_ guna mengurangi risiko _overfitting_. Keluaran dari model ini adalah nilai prediksi _rating_ yang telah dinormalisasi ke rentang 0–1 menggunakan fungsi aktivasi _sigmoid_. Pendekatan ini memungkinkan sistem belajar preferensi tersembunyi berdasarkan pola interaksi historis pengguna dan memberikan hasil rekomendasi yang lebih personal.
+```python
+class RecommenderNet(tf.keras.Model):
+    def __init__(self, total_users, total_movies, embed_dim, **kwargs):
+        super().__init__(**kwargs)
+        self.total_users = total_users
+        self.total_movies = total_movies
+        self.embed_dim = embed_dim
+
+        # User embedding and bias
+        self.user_emb = layers.Embedding(
+            input_dim=total_users,
+            output_dim=embed_dim,
+            embeddings_initializer='he_normal',
+            embeddings_regularizer=regularizers.l2(1e-6)
+        )
+        self.user_bias_emb = layers.Embedding(total_users, 1)
+
+        # Movie embedding and bias
+        self.movie_emb = layers.Embedding(
+            input_dim=total_movies,
+            output_dim=embed_dim,
+            embeddings_initializer='he_normal',
+            embeddings_regularizer=regularizers.l2(1e-6)
+        )
+        self.movie_bias_emb = layers.Embedding(total_movies, 1)
+
+         # Dropout for regularization
+        self.dropout = layers.Dropout(0.2)
+
+    def call(self, inputs, training=False):
+        user_input = inputs[:, 0]
+        movie_input = inputs[:, 1]
+
+        user_vector = self.dropout(self.user_emb(user_input), training=training)
+        user_bias = self.user_bias_emb(user_input)
+        movie_vector = self.dropout(self.movie_emb(movie_input), training=training)
+        movie_bias = self.movie_bias_emb(movie_input)
+
+        interaction = tf.reduce_sum(user_vector * movie_vector, axis=1, keepdims=True)
+        output = interaction + user_bias + movie_bias
+        return tf.nn.sigmoid(output)
+```     
+Setelah arsitektur _RecommenderNet_ berhasil didefinisikan, langkah selanjutnya adalah menginisialisasi dan menyusun model tersebut untuk proses pelatihan. Model diinisialisasi dengan parameter jumlah total pengguna dan film dari data yang telah dipetakan, serta dimensi _embedding_ sebesar 6 sebagai representasi fitur _laten_. Model kemudian dikompilasi menggunakan _optimizer_ Adam dengan _learning rate_ sebesar 0.001 untuk mempercepat konvergensi. Sebagai fungsi _loss_, digunakan _Mean Squared Error_ (MSE) yang umum digunakan dalam masalah regresi. Selain itu, metrik evaluasi yang dipantau selama pelatihan adalah _Root Mean Squared Error_ (RMSE) yang memberikan gambaran yang lebih interpretatif terhadap kesalahan prediksi karena berada dalam skala yang sama dengan rating. Tahapan ini menjadi kunci dalam mempersiapkan model agar mampu mempelajari pola interaksi dari data pelatihan.
+```python
+# Initialize the RecommenderNet model
+model = RecommenderNet(total_users=len(user_mapping), total_movies=len(movie_mapping), embed_dim=6)
+# Compile the model
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+    loss='mean_squared_error',
+    metrics=[tf.keras.metrics.RootMeanSquaredError()]
+)
+```
+Untuk melatih model _RecommenderNet_, digunakan strategi pelatihan yang mencakup mekanisme _early stopping_ dan penyesuaian _learning rate_ secara adaptif untuk mengoptimalkan proses _training_. _Callback EarlyStopping_ diterapkan agar pelatihan otomatis dihentikan apabila _validation loss_ tidak menunjukkan peningkatan setelah 2 _epoch_ berturut-turut. Hal ini bertujuan untuk mencegah _overfitting_ dan menghemat waktu komputasi. Selain itu, diterapkan juga _callback ReduceLROnPlateau_ yang secara otomatis mengurangi _learning rate_ sebanyak setengah jika _validation loss_ stagnan selama 2 _epoch_. Hal ini membantu model mencapai konvergensi lebih halus dan stabil pada tahap akhir pelatihan. Model dilatih menggunakan _batch size_ sebesar 64 dan maksimum 25 _epoch_, dengan pembagian data menjadi 80% untuk pelatihan dan 20% untuk validasi. Selama proses pelatihan, metrik dan _loss_ dilacak untuk mengevaluasi kinerja model dalam mempelajari hubungan _laten_ antara pengguna dan film.
+```python
+# EarlyStopping callback to stop training when validation loss stops improving
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss',
+    patience=2,
+    restore_best_weights=True
+)
+# ReduceLROnPlateau callback to reduce learning rate when validation loss plateaus
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+    monitor='val_loss',
+    factor=0.5,
+    patience=2,
+    verbose=1
+)
+# Training the RecommenderNet model
+history_recommenderNet = model.fit(
+    X_train, y_train,
+    batch_size=64,
+    epochs=25,
+    verbose=1,
+    validation_data=(X_val, y_val),
+    callbacks=[early_stopping, reduce_lr]
+)
+```
+Pendekatan _RecommenderNet_ menghasilkan rekomendasi berdasarkan pola interaksi historis antara pengguna dan film, dengan memanfaatkan pembelajaran representasi (embedding) untuk memodelkan faktor _laten_. Dalam implementasinya, setelah model dilatih, kita dapat memprediksi skor kesukaan pengguna terhadap semua film yang tersedia, kemudian memilih Top-N film dengan skor prediksi tertinggi untuk ditampilkan sebagai rekomendasi personal.
+```python
+# Function to get top-N movie recommendations for a given user using the trained model
+def get_top_n_recommendations(model, user_id, movie_ids, movies_df, N=10):
+    # Create an array where user_id repeats for each movie
+    user_array = np.array([user_id] * len(movie_ids))
+    # Stack user and movie indices to create input pairs for the model
+    input_array = np.stack([user_array, movie_ids], axis=1)
+    # Predict ratings for all movies for this user
+    predictions = model.predict(input_array, verbose=0).flatten()
+    # Get indices of top N predicted ratings, sorted descending
+    top_indices = np.argsort(predictions)[::-1][:N]
+    # Extract movie IDs and predicted scores for the top N movies
+    top_movie_ids = movie_ids[top_indices]
+    top_scores = predictions[top_indices]
+    # Filter movies DataFrame to include only the top recommended movies
+    top_movies = movies_df[movies_df['movieId'].isin(top_movie_ids)].copy()
+    # Add predicted score (normalized 0-1)
+    top_movies['predicted_score'] = top_movies['movieId'].map(dict(zip(top_movie_ids, top_scores)))
+    # Convert predicted scores back to rating scale 1-5
+    top_movies['predicted_rating'] = top_movies['predicted_score'] * 4 + 1
+    # Sort movies by predicted rating descending and reset index for ranking
+    top_movies = top_movies.sort_values(by='predicted_rating', ascending=False).reset_index(drop=True)
+    top_movies.index += 1  # Start rank index at 1
+    # Return movieId, title, and predicted_rating
+    return top_movies[['movieId', 'title', 'predicted_rating']]
+
+# Example usage
+user_id = 3
+all_movie_ids = movies['movieId'].values
+top_n = 10
+top_recommendations_df = get_top_n_recommendations(model, user_id, all_movie_ids, movies, top_n)
+print(top_recommendations_df)
+
+# Tweet-style output of top recommendations
+tweet_lines = [f"User {user_id} Top-{top_n} Movie Recommendations:"]
+for rank, row in top_recommendations_df.iterrows():
+    tweet_lines.append(f"{rank}. {row['title']} (ID: {row['movieId']}) - Predicted Rating: {row['predicted_rating']:.2f}")
+tweet_text = "\n".join(tweet_lines)
+print("\n--- Top 10 Movie Recommendations ---")
+print(tweet_text)
+```
+Fungsi `get_top_n_recommendations()` digunakan untuk menghasilkan daftar film terbaik bagi seorang pengguna tertentu (misalnya `user_id = 3`). Fungsi ini menyusun pasangan _input_ pengguna-film, melakukan prediksi terhadap seluruh film, lalu memilih film dengan skor tertinggi. Skor yang dihasilkan berada dalam rentang 0–1 dan kemudian dikonversi kembali ke skala _rating_ 1–5 untuk interpretasi yang lebih mudah. Hasil akhirnya adalah daftar rekomendasi film yang telah dipersonalisasi, lengkap dengan prediksi nilai rating yang akan diberikan oleh pengguna tersebut, yang sangat berguna untuk sistem seperti platform _streaming_ berbasis preferensi pengguna. 
+
+![TopN_RecommenderNet](./assets/rn_testing.png)
+
+Pendekatan _RecommenderNet_ ini memiliki kelebihan utama berupa kemampuannya dalam menangkap hubungan kompleks antara pengguna dan film melalui pembelajaran representasi fitur yang tidak eksplisit. Hal ini membuat _RecommenderNet_ efektif dalam memberikan rekomendasi yang lebih personal dan akurat, terutama ketika tersedia banyak data interaksi. Selain itu, penggunaan _dropout_ dan regularisasi juga membantu mencegah _overfitting_ serta meningkatkan generalisasi model. Namun, pendekatan ini memiliki kelemahan dalam menangani masalah _cold start_, karena membutuhkan data interaksi historis agar dapat menghasilkan prediksi yang baik. Jika terdapat pengguna atau film baru yang belum pernah muncul dalam data pelatihan, model ini tidak dapat memberikan rekomendasi yang efektif.
