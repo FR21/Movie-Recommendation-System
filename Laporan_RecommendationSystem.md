@@ -81,3 +81,32 @@ Grafik batang vertikal berikut menggambarkan 10 genre film dengan jumlah _rating
 ### Visualisasi  Genre Film Terpopuler berdasarkan Rata-rata Rating
 ![Top10_GenresbyAverageRating](./assets/gbar.png)
 Visualisasi berikut menyajikan grafik batang horizontal yang menggambarkan 10 genre film dengan rata-rata _rating_ tertinggi, yang telah diurutkan dari nilai tertinggi ke terendah. Genre _Crime_ menempati posisi teratas dengan rata-rata rating sekitar 3.65, sedikit unggul dari genre Drama yang memperoleh nilai rata-rata serupa. Selanjutnya, genre _Adventure_, _Romance_, dan _Thriller_ masing-masing memiliki rata-rata _rating_ sekitar 3.5, menunjukkan bahwa film-film dengan genre tersebut cenderung mendapatkan respons positif dari penonton. Di tengah daftar, terdapat genre _Fantasy_, _Sci-Fi_, dan _Action_, yang masih mencatatkan performa baik berdasarkan penilaian pengguna. Sementara itu, dua genre yang menempati posisi terbawah dalam daftar ini adalah _Children_ dan _Comedy_, dengan rata-rata rating mendekati 3.4. Meskipun genre _Comedy_ tergolong sangat populer dari sisi jumlah produksi dan penonton, namun persepsi kualitasnya berdasarkan _rating_ sedikit lebih rendah dibandingkan genre lainnya.
+
+## Data Preparation
+### **1. Content Based Filtering**
+Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Content Based Filtering_ sebagai berikut:
+-  **`Konversi Format Genre`**: Pada tahap ini, kolom genres yang awalnya berisi daftar genre diubah menjadi string dengan elemen yang dipisahkan spasi. Hal ini dilakukan bertujuan untuk genre bisa dianalisis sebagai fitur teks menggunakan teknik seperti _TF-IDF_. Proses ini termasuk dalam normalisasi teks yang bertujuan sebagai ekstraksi fitur teks untuk membuat data dalam bentuk teks yang terstruktur dan mudah diproses.
+    ```python
+    # Convert the 'genres' column from list back to space-separated string
+    movies['genres'] = movies['genres'].apply(lambda x: ' '.join(x) if isinstance(x, list) else x)
+    ```
+    
+-  **`Membuat Salinan Data`**: Pada tahap ini, data asli akan disalin ke variabel baru untuk diproses lebih lanjut. Tujuannya adalah menjaga data asli tetap utuh dan memungkinkan eksplorasi data secara aman. Hal ini bertujuan menduplikasi data untuk preprocessing yang aman.
+    ```python
+    # Create a copy of movies dataframe for preprocessing
+    movie_pre = movies.copy()
+    ```
+
+-  **`Menghapus Genre Tidak Tersedia`**: Berikutnya, nilai _placeholder_ seperti "(no genres listed)" diganti dengan string kosong agar tidak mengganggu analisis. Tujuannya adalah menghilangkan data yang tidak mengandung informasi berguna. Hal ini termasuk dalam penghapusan data noise karena _placeholder_ tersebut tidak memberikan kontribusi dalam pemodelan sehingga harus dibersihkan.
+    ```python
+    # Replace '(no genres listed)' with an empty string
+    movie_pre['genres'] = movie_pre['genres'].replace('(no genres listed)', '')
+    ```
+
+-  **`Menghapus Simbol Pemisah`**: Langkah terakhir, karakter pemisah | yang ada di string genre diganti dengan spasi. Alasannya adalah untuk memudahkan proses pemisahan kata sehingga setiap genre dapat dikenali secara terpisah. Hal ini karena _TF-IDF_ membutuhkan _input_ berupa teks biasa tanpa simbol khusus agar fitur dapat diekstrak dengan benar.
+    ```python
+    # Replace pipe '|' characters with space in the genres string
+    movie_pre['genres'] = movie_pre['genres'].str.replace('|', ' ')
+    ```    
+Berikut adalah hasil dari tahap Data Preparation yang telah dilakukan pada pendekatan _Content Based Filtering_:
+![Movie_Pre](./assets/movie_pre.png)
