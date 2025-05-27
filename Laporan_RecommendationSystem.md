@@ -313,21 +313,6 @@ def get_top_n_recommendations(model, user_id, movie_ids, movies_df, N=10):
     top_movies.index += 1  # Start rank index at 1
     # Return movieId, title, and predicted_rating
     return top_movies[['movieId', 'title', 'predicted_rating']]
-
-# Example usage
-user_id = 3
-all_movie_ids = movies['movieId'].values
-top_n = 10
-top_recommendations_df = get_top_n_recommendations(model, user_id, all_movie_ids, movies, top_n)
-print(top_recommendations_df)
-
-# Tweet-style output of top recommendations
-tweet_lines = [f"User {user_id} Top-{top_n} Movie Recommendations:"]
-for rank, row in top_recommendations_df.iterrows():
-    tweet_lines.append(f"{rank}. {row['title']} (ID: {row['movieId']}) - Predicted Rating: {row['predicted_rating']:.2f}")
-tweet_text = "\n".join(tweet_lines)
-print("\n--- Top 10 Movie Recommendations ---")
-print(tweet_text)
 ```
 Fungsi `get_top_n_recommendations()` digunakan untuk menghasilkan daftar film terbaik bagi seorang pengguna tertentu (misalnya `user_id = 3`). Fungsi ini menyusun pasangan _input_ pengguna-film, melakukan prediksi terhadap seluruh film, lalu memilih film dengan skor tertinggi. Skor yang dihasilkan berada dalam rentang 0–1 dan kemudian dikonversi kembali ke skala _rating_ 1–5 untuk interpretasi yang lebih mudah. Hasil akhirnya adalah daftar rekomendasi film yang telah dipersonalisasi, lengkap dengan prediksi nilai rating yang akan diberikan oleh pengguna tersebut, yang sangat berguna untuk sistem seperti platform _streaming_ berbasis preferensi pengguna. 
 
@@ -439,23 +424,6 @@ def get_top_n_recommendations_ncf(model, user_id, movie_indices, movies_df, movi
     top_movies = top_movies.sort_values(by='predicted_rating', ascending=False).reset_index(drop=True)
     top_movies.index += 1
     return top_movies[['movieId', 'title', 'predicted_rating']]
-
-# Example usage
-user_id = 12
-movie_indices = np.array(list(movie_mapping.values()))
-top_n = 10
-top_recommendations_df = get_top_n_recommendations_ncf(
-    model, user_id, movie_indices, movies, movie_mapping, N=top_n
-)
-print(top_recommendations_df)
-
-# Tweet-style output of top recommendations
-tweet_lines = [f"User {user_id} Top-{top_n} Movie Recommendations:"]
-for rank, row in top_recommendations_df.iterrows():
-    tweet_lines.append(f"{rank}. {row['title']} (ID: {row['movieId']}) - Predicted Rating: {row['predicted_rating']:.2f}")
-tweet_text = "\n".join(tweet_lines)
-print("\n--- Top 10 Movie Recommendations ---")
-print(tweet_text)
 ```
 ![TopN_NCF](./assets/ncf_testing.png)
 
