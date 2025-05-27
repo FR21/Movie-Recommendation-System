@@ -420,3 +420,35 @@ Fungsi `get_top_n_recommendations_ncf` digunakan untuk menghasilkan rekomendasi 
 ![TopN_NCF](./assets/ncf_testing.png)
 
 Kelebihan utama dari NCF adalah fleksibilitas dan kapasitasnya dalam memodelkan relasi yang kompleks, sehingga dapat menghasilkan prediksi _rating_ yang lebih akurat. Namun demikian, model ini juga memiliki kelemahan, terutama dalam hal kebutuhan data interaksi yang besar dan komputasi yang lebih intensif. Seperti halnya RecommenderNet, NCF juga belum efektif menangani masalah _cold start_ karena tetap bergantung pada data historis pengguna dan _item_.
+
+## Evaluation
+Setelah proses pelatihan model selesai, tahap selanjutnya adalah melakukan evaluasi untuk menilai seberapa akurat model dalam memprediksi _rating_ yang diberikan pengguna terhadap film. Karena sistem rekomendasi ini merupakan pendekatan regresi terhadap skor _rating_ dalam skala kontinu, maka digunakan dua metrik evaluasi yang umum dalam skenario ini, yaitu _Mean Absolute Error_ (MAE) dan _Root Mean Squared Error_ (RMSE). Dengan menggunakan kedua metrik ini, performa model dapat dievaluasi secara objektif berdasarkan seberapa dekat prediksi model terhadap nilai _rating_ sebenarnya.
+
+### Metrik Evaluasi
+1. **`Mean Absolute Error (MAE)`**: MAE mengukur rata-rata absolut dari selisih antara nilai aktual dan prediksi.
+
+    <img src="https://latex.codecogs.com/svg.image?\dpi{120}&space;\bg{transparent}&space;\color{White}&space;\text{MAE}&space;=&space;\frac{1}{n}&space;\sum_{i=1}^{n}&space;\left|y_i&space;-&space;\hat{y}_i\right|">
+   
+    Metrik ini memberikan gambaran rata-rata kesalahan model tanpa memperhatikan arah kesalahan (positif atau negatif), sehingga mudah diinterpretasikan. Semakin kecil nilai MAE, semakin akurat prediksi model terhadap data aktual.
+   
+    ```python
+    # Calculate MAE for RecommenderNet and NCF predictions
+    mae_rec = mean_absolute_error(y_true_recommenderNet, y_pred_recommenderNet)
+    mae_ncf = mean_absolute_error(y_true_ncf, y_pred_ncf)
+    ```
+
+    Cara kerja: MAE menghitung seberapa besar kesalahan rata-rata prediksi model terhadap data aktual, tanpa mempertimbangkan arah kesalahan.
+
+2. **`Root Mean Squared Error (RMSE)`**: RMSE mengukur akar dari rata-rata kuadrat selisih antara nilai aktual dan prediksi.
+
+     <img src="https://latex.codecogs.com/svg.image?\dpi{120}&space;\bg{transparent}&space;\color{White}&space;\text{RMSE}&space;=&space;\sqrt{&space;\frac{1}{n}&space;\sum_{i=1}^{n}&space;(y_i&space;-&space;\hat{y}_i)^2&space;}">
+        
+      RMSE lebih sensitif terhadap _outlier_ dibanding MAE karena kesalahan dikuadratkan. Nilai lebih kecil menunjukkan prediksi lebih akurat secara keseluruhan. Oleh karena itu, RMSE sangat berguna untuk mendeteksi model yang sensitif terhadap _outlier_.
+   
+      ```python
+      # Calculate RMSE for RecommenderNet and NCF predictions
+      rmse_rec = np.sqrt(mean_squared_error(y_true_recommenderNet, y_pred_recommenderNet))
+      rmse_ncf = np.sqrt(mean_squared_error(y_true_ncf, y_pred_ncf))
+      ```
+                
+      Cara kerja: RMSE menghitung rata-rata kuadrat dari kesalahan prediksi, kemudian diakarkan untuk mendapatkan satuan yang sama dengan target. Semakin besar kesalahan, semakin tinggi nilainya.
