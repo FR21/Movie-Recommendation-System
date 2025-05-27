@@ -415,7 +415,7 @@ history_ncf = model_ncf.fit(
     callbacks=[early_stopping, reduce_lr]
 )
 ```
-Fungsi `get_top_n_recommendations_ncf` digunakan untuk menghasilkan rekomendasi film teratas bagi pengguna tertentu berdasarkan prediksi _rating_ dari model _Neural Collaborative Filtering_ yang telah dilatih. Fungsi ini menerima ID pengguna, daftar indeks film, serta data film sebagai _input_, kemudian memprediksi _rating_ untuk semua film yang tersedia bagi pengguna tersebut. Prediksi _rating_ ini kemudian diurutkan dari yang tertinggi, dan diambil sejumlah N film teratas sebagai rekomendasi. Selanjutnya, hasil prediksi yang berupa nilai dalam rentang 0 hingga 1 dikonversi ke skala _rating_ 0 hingga 5 untuk memudahkan interpretasi. Film-film yang direkomendasikan ditampilkan dalam urutan rating prediksi tertinggi disertai informasi judul dan ID film. Berikut adalah contoh penerapan untuk `user_id = 10`.
+Fungsi `get_top_n_recommendations_ncf` digunakan untuk menghasilkan rekomendasi film teratas bagi pengguna tertentu berdasarkan prediksi _rating_ dari model _Neural Collaborative Filtering_ yang telah dilatih. Fungsi ini menerima ID pengguna, daftar indeks film, serta data film sebagai _input_, kemudian memprediksi _rating_ untuk semua film yang tersedia bagi pengguna tersebut. Prediksi _rating_ ini kemudian diurutkan dari yang tertinggi, dan diambil sejumlah N film teratas sebagai rekomendasi. Selanjutnya, hasil prediksi yang berupa nilai dalam rentang 0 hingga 1 dikonversi ke skala _rating_ 0 hingga 5 untuk memudahkan interpretasi. Film-film yang direkomendasikan ditampilkan dalam urutan rating prediksi tertinggi disertai informasi judul dan ID film. Berikut adalah contoh penerapan untuk `user_id = 12`.
 
 ![TopN_NCF](./assets/ncf_testing.png)
 
