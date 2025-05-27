@@ -334,3 +334,89 @@ Fungsi `get_top_n_recommendations()` digunakan untuk menghasilkan daftar film te
 ![TopN_RecommenderNet](./assets/rn_testing.png)
 
 Pendekatan _RecommenderNet_ ini memiliki kelebihan utama berupa kemampuannya dalam menangkap hubungan kompleks antara pengguna dan film melalui pembelajaran representasi fitur yang tidak eksplisit. Hal ini membuat _RecommenderNet_ efektif dalam memberikan rekomendasi yang lebih personal dan akurat, terutama ketika tersedia banyak data interaksi. Selain itu, penggunaan _dropout_ dan regularisasi juga membantu mencegah _overfitting_ serta meningkatkan generalisasi model. Namun, pendekatan ini memiliki kelemahan dalam menangani masalah _cold start_, karena membutuhkan data interaksi historis agar dapat menghasilkan prediksi yang baik. Jika terdapat pengguna atau film baru yang belum pernah muncul dalam data pelatihan, model ini tidak dapat memberikan rekomendasi yang efektif.
+
+#### b.Neural Collaborative Filtering (NCF)
+Pendekatan **Neural Collaborative Filtering (NCF)** memperluas ide dasar kolaboratif dengan memanfaatkan arsitektur _neural network_ yang lebih kompleks. Dalam model ini, representasi pengguna dan _item_ dipelajari melalui layer _embedding_, lalu dikombinasikan melalui proses _concatenation_ dan diproses oleh beberapa layer _dense_ yang dilengkapi dengan regularisasi L2, _batch normalization_, dan _dropout_. Tujuan utamanya adalah menangkap interaksi non-linear antara pengguna dan _item_ yang tidak dapat ditangkap oleh metode _matrix factorization_ tradisional. 
+```python
+num_users = len(user_mapping)
+num_items = len(movie_mapping)
+embedding_dim = 8
+# Input layers
+user_input = layers.Input(shape=(), dtype=tf.int32, name='user_input')
+item_input = layers.Input(shape=(), dtype=tf.int32, name='item_input')
+
+# Embedding layers with regularization
+user_embedding = layers.Embedding(
+    input_dim=num_users,
+    output_dim=embedding_dim,
+    embeddings_regularizer=regularizers.l2(1e-6),
+    name='user_embedding'
+)(user_input)
+
+item_embedding = layers.Embedding(
+    input_dim=num_items,
+    output_dim=embedding_dim,
+    embeddings_regularizer=regularizers.l2(1e-6),
+    name='item_embedding'
+)(item_input)
+
+# Concatenate embedding
+user_vec = layers.Flatten()(user_embedding)
+item_vec = layers.Flatten()(item_embedding)
+concat = layers.Concatenate()([user_vec, item_vec])
+
+# Fully connected layers with dropout and L2 regularization
+x = layers.Dense(64, activation='relu', kernel_regularizer=regularizers.l2(1e-6))(concat)
+x = layers.BatchNormalization()(x)
+x = layers.Activation('relu')(x)
+x = layers.Dropout(0.2)(x)
+x = layers.Dense(32, activation='relu', kernel_regularizer=regularizers.l2(1e-6))(x)
+
+# Output layer
+output = layers.Dense(1, activation='sigmoid')(x)
+
+# Define model
+model_ncf = Model(inputs=[user_input, item_input], outputs=output)
+model_ncf.compile(
+    optimizer=optimizers.Adam(learning_rate=0.001),
+    loss='mse',
+    metrics=[tf.keras.metrics.RootMeanSquaredError()]
+)
+```
+Model _Neural Collaborative Filtering_ (NCF) dilatih menggunakan _input_ ganda berupa ID pengguna dan ID film yang telah dipisahkan dari dataset pelatihan dan validasi. Proses pelatihan dilakukan selama maksimum 30 epoch dengan ukuran _batch_ 64 dan pengacakan data setiap _epoch_ untuk menghindari _overfitting_ terhadap pola tertentu. Untuk meningkatkan stabilitas dan efisiensi pelatihan, digunakan dua _callback_, yaitu _EarlyStopping_ yang akan menghentikan pelatihan ketika metrik validasi tidak membaik selama dua _epoch_ berturut-turut, serta _ReduceLROnPlateau_, yang menurunkan laju pembelajaran saat metrik validasi stagnan. Selama pelatihan, model belajar merepresentasikan relasi non-linear antara pengguna dan film melalui beberapa layer _fully connected_, yang diperkaya dengan _dropout_ dan regularisasi.
+```python
+# Separate users and items for training and validation
+X_train_user = X_train[:, 0]
+X_train_item = X_train[:, 1]
+X_val_user = X_val[:, 0]
+X_val_item = X_val[:, 1]
+
+# EarlyStopping callback to stop training when validation loss stops improving
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss',
+    patience=2,
+    restore_best_weights=True
+)
+# ReduceLROnPlateau callback to reduce learning rate when validation loss plateaus
+reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+    monitor='val_loss',
+    factor=0.5,
+    patience=2,
+    verbose=1
+)
+
+# Training the Neural Collaborative Filtering model
+history_ncf = model_ncf.fit(
+    [X_train_user, X_train_item], y_train,
+    validation_data=([X_val[:, 0], X_val[:, 1]], y_val),
+    epochs=30,
+    batch_size=64,
+    shuffle=True,
+    callbacks=[early_stopping, reduce_lr]
+)
+```
+Fungsi `get_top_n_recommendations_ncf` digunakan untuk menghasilkan rekomendasi film teratas bagi pengguna tertentu berdasarkan prediksi _rating_ dari model _Neural Collaborative Filtering_ yang telah dilatih. Fungsi ini menerima ID pengguna, daftar indeks film, serta data film sebagai _input_, kemudian memprediksi _rating_ untuk semua film yang tersedia bagi pengguna tersebut. Prediksi _rating_ ini kemudian diurutkan dari yang tertinggi, dan diambil sejumlah N film teratas sebagai rekomendasi. Selanjutnya, hasil prediksi yang berupa nilai dalam rentang 0 hingga 1 dikonversi ke skala _rating_ 0 hingga 5 untuk memudahkan interpretasi. Film-film yang direkomendasikan ditampilkan dalam urutan rating prediksi tertinggi disertai informasi judul dan ID film. Berikut adalah contoh penerapan untuk `user_id = 10`.
+
+![TopN_NCF](./assets/ncf_testing.png)
+
+Kelebihan utama dari NCF adalah fleksibilitas dan kapasitasnya dalam memodelkan relasi yang kompleks, sehingga dapat menghasilkan prediksi _rating_ yang lebih akurat. Namun demikian, model ini juga memiliki kelemahan, terutama dalam hal kebutuhan data interaksi yang besar dan komputasi yang lebih intensif. Seperti halnya RecommenderNet, NCF juga belum efektif menangani masalah _cold start_ karena tetap bergantung pada data historis pengguna dan _item_.
