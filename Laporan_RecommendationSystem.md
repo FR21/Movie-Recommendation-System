@@ -172,3 +172,35 @@ Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Collaborative 
     y_train = targets[:train_cutoff]
     y_val = targets[train_cutoff:]
     ```        
+
+## Modeling
+Dalam tahap _modeling_, sistem rekomendasi dibangun untuk memberikan saran film yang relevan kepada pengguna. Proses ini dibagi menjadi dua pendekatan utama, yaitu _Content-Based Filtering_ dan _Collaborative Filtering_. Kedua pendekatan ini digunakan secara terpisah untuk membandingkan efektivitas dan karakteristik masing-masing dalam menghasilkan rekomendasi.
+### **1. Content Based Filtering**
+Model _Content-Based Filtering_ dibangun dengan menggunakan teknik _TF-IDF_ (Term Frequency-Inverse Document Frequency) untuk mengubah data genre film menjadi representasi numerik yang dapat dianalisis.
+```python
+# Initialize TF-IDF vectorizer
+tfidf = TfidfVectorizer()
+# Fit and transform the 'genres' column to create a TF-IDF feature matrix
+tfidf_matrix = tfidf.fit_transform(movies['genres'])
+# Calculate cosine similarity between all movie genre vectors
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+# Recommend movies similar to a given movie based on genre similarity
+def recommend_movies(movie_title, movies=movies, cosine_sim=cosine_sim, top_n=10):
+    # Find the index of the movie that matches the title
+    idx = movies[movies['title'] == movie_title].index[0]
+    # Get similarity scores for this movie with all others
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    # Sort movies by similarity score in descending order, excluding the movie itself
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n+1]
+    # Get the indices of the top N similar movies
+    movie_indices = [i[0] for i in sim_scores]
+    # Return the titles and genres of the recommended movies
+    return movies.iloc[movie_indices][['title', 'genres']]
+# Content-Based Movie Recommendation Testing
+recommend_movies('Toy Story (1995)', top_n=10)
+```
+Pertama, kolom genre film diolah menggunakan _TF-IDF Vectorizer_ untuk menghasilkan matriks fitur yang menggambarkan seberapa penting tiap kata genre pada setiap film. Selanjutnya, kemiripan antar film dihitung menggunakan _cosine similarity_ berdasarkan matriks _TF-IDF_ tersebut, sehingga menghasilkan skor kesamaan antara setiap pasangan film. Sistem rekomendasi ini kemudian menggunakan skor kemiripan tersebut untuk menyarankan film yang memiliki genre paling mirip dengan film input yang diberikan pengguna. Fungsi _recommend_movies_ mengambil judul film sebagai _input_ dan mengembalikan daftar top-N film rekomendasi yang paling mirip berdasarkan genre. Sebagai contoh, ketika diberikan film Toy Story (1995), sistem akan menampilkan 10 film dengan genre yang paling mirip sebagai rekomendasi.
+
+![TopN_ContentBasedFiltering](./assets/cbf_testing.png)
+
+Pendekatan ini sangat efektif untuk memberikan rekomendasi yang sesuai dengan preferensi genre pengguna tanpa memerlukan data _rating_ atau interaksi pengguna lainnya. Salah satu keunggulan penting dari metode ini adalah kemampuannya mengatasi masalah _cold start_, yaitu ketika pengguna atau _item_ baru belum memiliki data interaksi yang cukup untuk sistem rekomendasi berbasis kolaboratif. Namun, kekurangannya adalah sistem ini kurang mampu menangani preferensi yang kompleks yang melibatkan pola interaksi antar pengguna, sehingga rekomendasi cenderung terbatas pada kemiripan konten saja.
