@@ -207,7 +207,7 @@ Pendekatan ini sangat efektif untuk memberikan rekomendasi yang sesuai dengan pr
 
 ### **2. Collaborative Filtering**
 Pada pendekatan _Collaborative Filtering_, sistem rekomendasi dikembangkan berdasarkan pola interaksi antara pengguna dan _item_ (film), tanpa memperhatikan konten film itu sendiri. Untuk mengimplementasikan metode ini, kami menggunakan dua model algoritma berbeda, yaitu _RecommenderNet_, sebuah jaringan saraf sederhana berbasis _embedding_, dan _Neural Collaborative Filtering_ (NCF), yang menggabungkan pendekatan generalisasi linear dan non-linear untuk menangkap hubungan kompleks antara pengguna dan _item_. Pendekatan ini memungkinkan sistem menghasilkan rekomendasi yang lebih personal dan relevan berdasarkan kesamaan preferensi antar pengguna.
-#### a.RecommenderNet
+#### a. RecommenderNet
 Model **RecommenderNet** adalah arsitektur *Neural Collaborative Filtering* sederhana yang memanfaatkan _embedding_ untuk merepresentasikan fitur laten pengguna dan film. Model ini bekerja dengan mengubah indeks pengguna dan film menjadi vektor representasi berdimensi rendah (latent factors) menggunakan lapisan _embedding_, lalu menghitung interaksi antara keduanya melalui perkalian elemen demi elemen (dot product). Selain embedding, model ini juga menyertakan _bias_ khusus untuk setiap pengguna dan film, serta menerapkan teknik _dropout_ guna mengurangi risiko _overfitting_. Keluaran dari model ini adalah nilai prediksi _rating_ yang telah dinormalisasi ke rentang 0–1 menggunakan fungsi aktivasi _sigmoid_. Pendekatan ini memungkinkan sistem belajar preferensi tersembunyi berdasarkan pola interaksi historis pengguna dan memberikan hasil rekomendasi yang lebih personal.
 ```python
 class RecommenderNet(tf.keras.Model):
@@ -335,7 +335,7 @@ Fungsi `get_top_n_recommendations()` digunakan untuk menghasilkan daftar film te
 
 Pendekatan _RecommenderNet_ ini memiliki kelebihan utama berupa kemampuannya dalam menangkap hubungan kompleks antara pengguna dan film melalui pembelajaran representasi fitur yang tidak eksplisit. Hal ini membuat _RecommenderNet_ efektif dalam memberikan rekomendasi yang lebih personal dan akurat, terutama ketika tersedia banyak data interaksi. Selain itu, penggunaan _dropout_ dan regularisasi juga membantu mencegah _overfitting_ serta meningkatkan generalisasi model. Namun, pendekatan ini memiliki kelemahan dalam menangani masalah _cold start_, karena membutuhkan data interaksi historis agar dapat menghasilkan prediksi yang baik. Jika terdapat pengguna atau film baru yang belum pernah muncul dalam data pelatihan, model ini tidak dapat memberikan rekomendasi yang efektif.
 
-#### b.Neural Collaborative Filtering (NCF)
+#### b. Neural Collaborative Filtering (NCF)
 Pendekatan **Neural Collaborative Filtering (NCF)** memperluas ide dasar kolaboratif dengan memanfaatkan arsitektur _neural network_ yang lebih kompleks. Dalam model ini, representasi pengguna dan _item_ dipelajari melalui layer _embedding_, lalu dikombinasikan melalui proses _concatenation_ dan diproses oleh beberapa layer _dense_ yang dilengkapi dengan regularisasi L2, _batch normalization_, dan _dropout_. Tujuan utamanya adalah menangkap interaksi non-linear antara pengguna dan _item_ yang tidak dapat ditangkap oleh metode _matrix factorization_ tradisional. 
 ```python
 num_users = len(user_mapping)
