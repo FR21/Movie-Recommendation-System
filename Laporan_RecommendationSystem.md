@@ -108,7 +108,7 @@ Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Content Based 
     # Replace pipe '|' characters with space in the genres string
     movie_pre['genres'] = movie_pre['genres'].str.replace('|', ' ')
     ```    
-Berikut adalah hasil dari tahap Data Preparation yang telah dilakukan pada pendekatan _Content Based Filtering_:
+Berikut adalah hasil dari tahap _Data Preparation_ yang telah dilakukan pada pendekatan _Content Based Filtering_:
 
 
 ![Movie_Pre](./assets/movie_pre.png)
