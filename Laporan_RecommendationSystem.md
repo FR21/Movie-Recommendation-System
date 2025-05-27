@@ -109,4 +109,6 @@ Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Content Based 
     movie_pre['genres'] = movie_pre['genres'].str.replace('|', ' ')
     ```    
 Berikut adalah hasil dari tahap Data Preparation yang telah dilakukan pada pendekatan _Content Based Filtering_:
+
+
 ![Movie_Pre](./assets/movie_pre.png)
