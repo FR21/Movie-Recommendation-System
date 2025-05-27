@@ -495,10 +495,10 @@ Setelah proses pelatihan model selesai, tahap selanjutnya adalah melakukan evalu
 
 ### Visualisasi MAE dan RMSE pada RecommenderNet dan Neural Collaborative Filtering
 
-    | Model                    | MAE  |  RMSE | 
-    |--------------------------|------|-------|
-    | RecommenderNet  |0.5829|0.7587 |
-    | Neural Collaborative Filtering  |0.6060|0.7812 |
+| Model                    | MAE  |  RMSE | 
+|--------------------------|------|-------|
+| RecommenderNet  |0.5829|0.7587 |
+| Neural Collaborative Filtering  |0.6060|0.7812 |
     
 Berdasarkan hasil evaluasi, model _RecommenderNet_ memperoleh nilai RMSE sebesar 0.7587 dan MAE sebesar 0.5829, sedangkan model _Neural Collaborative Filtering_ (NCF) mencatat RMSE sebesar 0.7812 dan MAE sebesar 0.6060. Kedua metrik tersebut menunjukkan seberapa besar rata-rata kesalahan prediksi model terhadap nilai _rating_ sebenarnya yang diberikan oleh pengguna. Secara umum, semakin kecil nilai MAE dan RMSE, semakin baik kinerja model dalam melakukan prediksi. Dari hasil tersebut, dapat disimpulkan bahwa _RecommenderNet_ memiliki performa yang sedikit lebih baik dibandingkan NCF, baik dalam hal kesalahan absolut rata-rata (MAE) maupun dalam hal sensitivitas terhadap _outlier_ (RMSE). Perbedaan nilainya memang tidak terlalu besar, namun tetap menunjukkan bahwa _RecommenderNet_ lebih akurat dalam memperkirakan _rating_ yang akan diberikan pengguna terhadap film tertentu. Hasil ini mengindikasikan bahwa pendekatan sederhana berbasis _embedding_ dan _dot product_ seperti pada _RecommenderNet_ masih cukup efektif untuk menangkap preferensi pengguna, bahkan jika dibandingkan dengan arsitektur yang lebih kompleks seperti NCF yang melibatkan _dense layers_. 
 
