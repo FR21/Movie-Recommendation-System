@@ -109,7 +109,7 @@ Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Content Based 
     movie_pre['genres'] = movie_pre['genres'].str.replace('|', ' ')
     ```    
 
--  **`TF-IDF Vectorization`**: Langkah terakhir, TF-IDF mengubah teks genre menjadi fitur numerik yang menunjukkan seberapa penting setiap kata genre dalam dataset. Dengan cara ini, model bisa mengenali pola genre secara efektif tanpa terganggu oleh kata yang sering muncul tapi kurang informatif.
+-  **`TF-IDF Vectorization`**: Langkah terakhir, TF-IDF digunakan untuk mengubah data teks genre menjadi representasi numerik dengan memberikan bobot pada setiap kata berdasarkan frekuensi kemunculannya dalam satu dokumen (film) dan seberapa umum kata tersebut di seluruh dataset. Proses ini membantu menonjolkan genre yang spesifik dan penting untuk masing-masing film, sekaligus mengurangi pengaruh genre yang sangat umum dan kurang informatif.
     ```python
     # Initialize TF-IDF vectorizer
     tfidf = TfidfVectorizer()
