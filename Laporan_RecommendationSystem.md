@@ -108,17 +108,17 @@ Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Content Based 
     # Replace pipe '|' characters with space in the genres string
     movie_pre['genres'] = movie_pre['genres'].str.replace('|', ' ')
     ```    
-Berikut adalah hasil dari tahap _Data Preparation_ yang telah dilakukan pada pendekatan _Content Based Filtering_:
 
-![Movie_Pre](./assets/movie_pre.png)
-
--  **`TF-IDF`**: Langkah terakhir, TF-IDF mengubah teks genre menjadi fitur numerik yang menunjukkan seberapa penting setiap kata genre dalam dataset. Dengan cara ini, model bisa mengenali pola genre secara efektif tanpa terganggu oleh kata yang sering muncul tapi kurang informatif.
+-  **`TF-IDF Vectorization`**: Langkah terakhir, TF-IDF mengubah teks genre menjadi fitur numerik yang menunjukkan seberapa penting setiap kata genre dalam dataset. Dengan cara ini, model bisa mengenali pola genre secara efektif tanpa terganggu oleh kata yang sering muncul tapi kurang informatif.
     ```python
     # Initialize TF-IDF vectorizer
     tfidf = TfidfVectorizer()
     # Fit and transform the 'genres' column to create a TF-IDF feature matrix
     tfidf_matrix = tfidf.fit_transform(movies['genres'])
     ```
+Berikut adalah hasil dari tahap _Data Preparation_ yang telah dilakukan pada pendekatan _Content Based Filtering_:
+
+![Movie_Pre](./assets/movie_pre.png)
 
 ### **2. Collaborative Filtering**
 Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Collaborative Filtering_ sebagai berikut:
