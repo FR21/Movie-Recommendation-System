@@ -183,7 +183,7 @@ Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Collaborative 
 ## Modeling
 Dalam tahap _modeling_, sistem rekomendasi dibangun untuk memberikan saran film yang relevan kepada pengguna. Proses ini dibagi menjadi dua pendekatan utama, yaitu _Content-Based Filtering_ dan _Collaborative Filtering_. Kedua pendekatan ini digunakan secara terpisah untuk membandingkan efektivitas dan karakteristik masing-masing dalam menghasilkan rekomendasi.
 ### **1. Content Based Filtering**
-Model _Content-Based Filtering_ dibangun dengan menggunakan teknik _TF-IDF_ (Term Frequency-Inverse Document Frequency) untuk mengubah data genre film menjadi representasi numerik yang dapat dianalisis.
+Model Content-Based Filtering dibangun menggunakan cosine similarity untuk mengukur tingkat kemiripan antar film berdasarkan genre. Dengan metode ini, film-film yang paling mirip secara konten dapat direkomendasikan kepada pengguna.
 ```python
 # Calculate cosine similarity between all movie genre vectors
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
