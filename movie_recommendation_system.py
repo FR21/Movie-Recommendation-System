@@ -18,98 +18,151 @@ This project aims to develop a personalized movie recommendation system by combi
 https://www.kaggle.com/datasets/shubhammehta21/movie-lens-small-latest-dataset
 
 # **1. Import Libraries**
+
+Pada bagian ini, dilakukan proses import berbagai library yang dibutuhkan untuk manipulasi data, visualisasi, preprocessing, ekstraksi fitur teks, serta pemodelan deep learning. Library seperti pandas dan numpy digunakan untuk analisis data, matplotlib dan seaborn untuk visualisasi, sklearn untuk preprocessing dan evaluasi model, serta tensorflow untuk membangun model deep learning.
 """
 
-# Data manipulation and analysis
 import numpy as np
 import pandas as pd
-# Data visualization
 import matplotlib.pyplot as plt
 import seaborn as sns
-# Data preprocessing
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-# Utility
 from google.colab import files
 from collections import Counter
-# Text Feature Engineering
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-# Deep Learning Framework
 import tensorflow as tf
 from tensorflow.keras import layers, regularizers, models, Model, losses, optimizers, metrics
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-"""# **2. Data Loading**"""
+"""Insight: Menggunakan berbagai library yang saling melengkapi memungkinkan pipeline analisis dan model berjalan efisien, terstruktur, dan modular. Hal ini penting agar proses mudah direproduksi dan dikembangkan lebih lanjut.
 
-# Upload kaggle.json
+# **2. Data Loading**
+
+Pada tahap ini, dilakukan proses upload file kaggle.json yang berisi API key dari akun Kaggle. File ini dibutuhkan untuk mengakses dan mengunduh dataset secara langsung dari Kaggle ke dalam Google Colab.
+"""
+
 files.upload()
+
+"""Insight: Penggunaan API kaggle.json mempermudah proses otomatisasi pengunduhan dataset, sehingga tidak perlu dilakukan secara manual melalui browser.
+
+Perintah ini digunakan untuk membuat folder .kaggle di direktori home, memindahkan file kaggle.json ke dalamnya, dan mengatur permission file menjadi hanya dapat dibaca/tulis oleh pengguna. Hal ini merupakan langkah konfigurasi wajib agar Kaggle API dapat berjalan di lingkungan Colab.
+"""
 
 !mkdir -p ~/.kaggle
 !mv kaggle.json ~/.kaggle/
 !chmod 600 ~/.kaggle/kaggle.json
 
-# Download dataset
+"""Insight: Menyimpan file API key secara aman dan memberikan permission yang tepat membantu menjaga keamanan kredensial akun Kaggle saat digunakan dalam notebook publik atau kolaboratif.
+
+Perintah ini digunakan untuk mengunduh dataset MovieLens Small (versi terbaru) dari Kaggle menggunakan Kaggle API. Dataset ini biasanya digunakan untuk analisis sistem rekomendasi berbasis rating film.
+"""
+
 !kaggle datasets download -d shubhammehta21/movie-lens-small-latest-dataset
 
-# Unzip dataset
+"""Insight: Dengan mengakses dataset langsung dari Kaggle, proses pengambilan data menjadi lebih cepat, terpercaya, dan mudah diotomatisasi dalam pipeline analisis atau machine learning.
+
+Perintah ini digunakan untuk mengekstrak file movie-lens-small-latest-dataset.zip yang telah diunduh dari Kaggle. Setelah diekstraksi, file CSV di dalamnya akan siap untuk dibaca dan dianalisis menggunakan pandas.
+"""
+
 !unzip movie-lens-small-latest-dataset.zip
 
-# Read CSV files - Movies.csv & Ratings.csv
+"""Insight: Proses ekstraksi dataset merupakan langkah awal penting sebelum memulai eksplorasi data. File yang sudah diekstrak dapat diakses secara langsung dalam notebook tanpa perlu manipulasi tambahan.
+
+Pada bagian ini, file movies.csv dan ratings.csv yang berasal dari dataset MovieLens dibaca menggunakan pandas.read_csv().
+"""
+
 movies = pd.read_csv('movies.csv')
 ratings = pd.read_csv('ratings.csv')
 
-# Show the first 5 rows of Movies Datasets
+"""Insight: Dengan memisahkan data film dan rating ke dalam dua dataframe, kita bisa melakukan eksplorasi lebih fleksibel seperti menganalisis distribusi genre atau menghitung rata-rata rating per film.
+
+Perintah movies.head() digunakan untuk menampilkan lima baris pertama dari dataset movies.csv. Melihat lima baris awal sangat membantu untuk memahami struktur data dan format isi kolom, serta memastikan bahwa proses pembacaan file berjalan dengan benar sebelum melanjutkan ke analisis lebih lanjut.
+"""
+
 movies.head()
 
-# Show the first 5 rows of Ratings Datasets
+"""Insight: Tabel ini memperlihatkan kolom movieId, title, dan genres, yang berisi informasi dasar dari setiap film seperti ID unik, judul film, dan genre yang terkait.
+
+Perintah ratings.head() digunakan untuk menampilkan lima baris pertama dari dataset ratings.csv. Melihat lima baris awal sangat membantu untuk memahami struktur data dan format isi kolom, serta memastikan bahwa proses pembacaan file berjalan dengan benar sebelum melanjutkan ke analisis lebih lanjut.
+"""
+
 ratings.head()
 
-"""# **3. Exploratory Data Analysis (EDA)**"""
+"""Insight: Data ini terdiri dari userId, movieId, rating, dan timestamp. Setiap baris merepresentasikan rating yang diberikan oleh pengguna tertentu terhadap sebuah film pada waktu tertentu. Struktur ini memungkinkan analisis perilaku pengguna seperti preferensi rating, histori interaksi, dan dapat digunakan dalam model sistem rekomendasi berbasis user-item.
 
-# Display the shape of the Movies and Ratings datasets
+# **3. Exploratory Data Analysis (EDA)**
+
+Kode ini digunakan untuk menampilkan jumlah baris dan kolom dari masing-masing dataset.
+"""
+
 for name, df in [('Movies', movies), ('Ratings', ratings)]:
     print(f"{name} dataset: {df.shape[0]} rows × {df.shape[1]} columns")
 
-# Display dataset structure and column information for Movies and Ratings
+"""Insight: Dataset movies memiliki 9.742 baris dan 3 kolom, sedangkan dataset ratings memiliki 100.836 baris dan 4 kolom. Terlihat bahwa dataset ratings jauh lebih besar dibandingkan movies, menunjukkan bahwa sebagian besar film telah menerima banyak rating dari pengguna. Hal ini memberikan peluang yang baik untuk membangun sistem rekomendasi karena jumlah interaksi user-movie cukup tinggi.
+
+Pada tahap ini, kode tersebut menampilkan informasi detail dari masing-masing dataset menggunakan df.info(), termasuk jumlah entri, jumlah nilai non-null, tipe data tiap kolom, dan estimasi penggunaan memori.
+"""
+
 for name, df in [('Movies', movies), ('Ratings', ratings)]:
     print(f"\n{name} Dataset Info:")
     df.info()
 
-# Show overall descriptive statistics for Movies dataset
+"""Insight: Movies dataset memiliki 9.742 entri dan 3 kolom: movieId (int64), title (object), dan genres (object). Ratings dataset memiliki 100.836 entri dan 4 kolom: userId, movieId, dan timestamp bertipe int64, serta rating bertipe float64. Semua kolom memiliki nilai yang lengkap (non-null), yang berarti tidak ada data hilang yang perlu dibersihkan. Tipe data yang sesuai seperti float64 untuk rating memungkinkan analisis numerik langsung tanpa konversi. Kolom timestamp masih dalam bentuk Unix time dan bisa dikonversi ke format tanggal jika diperlukan untuk analisis berbasis waktu.
+
+Pada bagian ini, fungsi describe(include="all") memberikan ringkasan statistik lengkap untuk semua kolom di dataset movies.
+"""
+
 movies.describe(include="all")
 
-# Show overall descriptive statistics for Ratings dataset
+"""Insight: Kolom movieId menunjukkan statistik numerik seperti mean, standar deviasi, nilai minimum dan maksimum, sementara kolom title dan genres memberikan informasi statistik kategori seperti jumlah unik (unique), nilai yang paling sering muncul (top), dan frekuensi kemunculannya (freq). Dari statistik ini, terdapat 9.742 film dengan 9.737 judul unik dan 951 genre unik. Genre Drama adalah yang paling umum, muncul sebanyak 1.053 kali.
+
+Pada bagian ini, fungsi describe(include="all") memberikan ringkasan statistik lengkap untuk semua kolom di dataset ratings.
+"""
+
 ratings.describe(include="all")
 
-# Check for missing values in the Movies and Ratings datasets
+"""Insight: Rata-rata rating adalah sekitar 3.5 dari skala maksimum 5, dengan sebagian besar rating berada di kisaran 3 sampai 4, menandakan distribusi rating yang cukup moderat. Terdapat 610 pengguna unik (userId max = 610), rentang movieId sangat luas, hingga 193.609, mengindikasikan adanya film dengan ID besar seperti yang ditemukan sebelumnya.
+
+Kode ini memeriksa keberadaan nilai yang hilang (missing values) di setiap kolom pada dataset movies dan ratings menggunakan isna().sum().
+"""
+
 for name, df in [('Movies', movies), ('Ratings', ratings)]:
     print(f"\nMissing values in {name} dataset:")
     print(df.isna().sum())
 
-# Check for duplicate rows
+"""Insight: Hasilnya menunjukkan bahwa tidak ada nilai kosong pada kedua dataset. Ketiadaan missing values menunjukkan data sudah bersih dan siap untuk analisis lebih lanjut tanpa perlu langkah imputasi atau pembersihan tambahan terkait missing data.
+
+Kode ini menghitung jumlah baris duplikat pada dataset movies dan ratings menggunakan fungsi duplicated().sum().
+"""
+
 for name, df in [('Movies', movies), ('Ratings', ratings)]:
     duplicates = df.duplicated().sum()
     print(f"Duplicate rows in {name} dataset: {duplicates}")
 
-# Check for duplicate columns
+"""Insight: Hasil menunjukkan bahwa kedua dataset tidak mengandung baris yang duplikat. Tidak adanya baris duplikat memastikan bahwa data unik dan tidak terjadi pengulangan entri yang bisa menyebabkan bias atau distorsi analisis dan model yang akan dibangun.
+
+Kode ini menghitung jumlah kolom duplikat pada dataset movies dan ratings menggunakan fungsi columns.duplicated().
+"""
+
 for name, df in [('Movies', movies), ('Ratings', ratings)]:
     duplicated_cols = df.columns[df.columns.duplicated()]
     print(f"Duplicate columns in {name} dataset: {len(duplicated_cols)}")
     if len(duplicated_cols) > 0:
         print("Duplicated columns:", list(duplicated_cols))
 
-# Count the number of genres
+"""Insight: Hasil menunjukkan bahwa kedua dataset tidak mengandung kolom yang duplikat. Tidak adanya kolom duplikat memastikan bahwa data unik dan tidak terjadi pengulangan entri yang bisa menyebabkan bias atau distorsi analisis dan model yang akan dibangun.
+
+Kode ini menghitung frekuensi kemunculan tiap genre film dari kolom genres pada dataset movies dengan memecah string genre yang dipisah tanda |. Kemudian, 10 genre paling umum divisualisasikan dalam bentuk bar chart menggunakan seaborn.
+"""
+
 genre_counter = Counter()
 for g in movies['genres']:
     genres_split = g.split('|')
     genre_counter.update(genres_split)
-
-# Convert to DataFrame
 genre_df = pd.DataFrame(genre_counter.most_common(10), columns=['Genre', 'Count'])
-
-# Visualize the top 10 most frequent movie genres
 sns.set(style="whitegrid")
 plt.figure(figsize=(10, 6))
 sns.barplot(data=genre_df, x='Count', y='Genre', hue='Genre', palette='viridis', dodge=False, legend=False)
@@ -119,7 +172,11 @@ plt.ylabel('Genre')
 plt.tight_layout()
 plt.show()
 
-# Visualize the distribution of movie ratings
+"""Insight: Genre Drama merupakan yang paling dominan, diikuti oleh Comedy dan Thriller, sementara itu genre Fantasy menjadi yang paling jarang muncul di antara sepuluh genre teratas. Hal ini mencerminkan preferensi umum dalam dataset. Visualisasi ini membantu memahami komposisi genre film yang tersedia, berguna untuk rekomendasi berdasarkan genre favorit pengguna.
+
+Kode ini membuat grafik batang untuk menampilkan distribusi rating film menggunakan countplot dari Seaborn. Setiap batang mewakili jumlah kemunculan masing-masing nilai rating dalam dataset ratings.
+"""
+
 sns.set(style="whitegrid")
 plt.figure(figsize=(10, 6))
 ax = sns.countplot(x='rating', data=ratings, hue='rating', palette='viridis', legend=False)
@@ -129,13 +186,14 @@ plt.ylabel('Frequency', fontsize=14)
 plt.tight_layout()
 plt.show()
 
-# Merge movie and rating data based on movieId
+"""Insight: Rating paling umum adalah 4.0, diikuti oleh 3.0 dan 5.0, menunjukkan bahwa pengguna cenderung memberikan rating yang cukup tinggi. Sebaliknya, rating rendah (di bawah 2.5) jarang diberikan. Hal ini menunjukkan adanya bias positif dalam perilaku rating pengguna, yang bisa mempengaruhi perhitungan rekomendasi atau evaluasi film.
+
+Kode ini menggabungkan dataset movies dan ratings berdasarkan movieId, lalu memisahkan setiap genre menjadi baris tersendiri menggunakan explode(). Setelah itu, dilakukan agregasi untuk menghitung rata-rata (mean) dan jumlah rating (count) per genre, serta mengurutkannya berdasarkan jumlah rating terbanyak.
+"""
+
 movie_data = pd.merge(movies, ratings, on='movieId')
-# Split genres into a list of individual genres
 movies['genres'] = movies['genres'].str.split('|')
-# Explode the genre list so each row corresponds to a single genre per movie
 movie_data = movies.explode('genres').merge(ratings, on='movieId')
-# Group by genre and calculate mean rating and rating count
 genre_rating_stats = (
     movie_data
     .groupby('genres')['rating']
@@ -143,7 +201,11 @@ genre_rating_stats = (
     .sort_values(by='count', ascending=False)
 )
 
-# Visualize the top 10 genres based on number of ratings
+"""Insight: Genre dengan jumlah rating tertinggi merupakan genre yang paling sering ditonton dan dinilai oleh pengguna, memberikan indikasi popularitas. Sementara itu, nilai rata-rata rating memberikan gambaran preferensi pengguna terhadap genre tersebut.
+
+Kode ini membuat grafik batang menggunakan seaborn untuk menampilkan 10 genre film dengan jumlah rating terbanyak. Data diambil dari hasil agregasi statistik genre dan diurutkan berdasarkan count.
+"""
+
 top_genres = genre_rating_stats.head(10).reset_index()
 plt.figure(figsize=(12, 6))
 sns.barplot(data=top_genres, x='genres', y='count', hue='genres', palette='viridis', legend=False)
@@ -154,7 +216,11 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
 
-# Visualize the top 10 genres sorted by average rating
+"""Insight: Genre seperti Drama, Comedy, dan Action menempati posisi teratas dalam jumlah rating, menandakan bahwa genre ini paling populer di kalangan pengguna. Informasi ini dapat dimanfaatkan untuk memprioritaskan genre dalam strategi rekomendasi atau penawaran konten.
+
+Kode ini menampilkan grafik batang dari 10 genre film yang sebelumnya paling sering diberi rating, namun kini diurutkan berdasarkan rata-rata rating tertinggi (mean). Hal tersebut akan memberikan perspektif kualitas dari genre yang populer.
+"""
+
 top_genres_sorted = top_genres.sort_values(by='mean', ascending=False)
 plt.figure(figsize=(12, 6))
 sns.barplot(data=top_genres_sorted, x='genres', y='mean', hue='genres', palette='viridis', legend=False)
@@ -165,59 +231,84 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
 
-"""# **4. Data Preprocessing**
+"""Insight: Beberapa genre populer seperti Crime dan Adventure mungkin menonjol dalam rata-rata rating meskipun jumlah rating-nya tidak sebanyak genre umum seperti Drama atau Comedy. Hal ini menunjukkan bahwa genre tertentu bisa memiliki kualitas tinggi namun dengan audiens yang lebih khusus. Cocok untuk segmentasi pengguna atau rekomendasi niche.
+
+# **4. Data Preprocessing**
 
 ## **a. Content Based Filtering**
+
+Kode ini mengubah kolom genres dari list menjadi string yang dipisahkan spasi agar siap digunakan untuk feature extraction berbasis teks seperti TF-IDF. Genre yang bertuliskan (no genres listed) diubah menjadi string kosong, dan simbol | diganti dengan spasi agar sesuai format analisis teks.
 """
 
-# Convert the 'genres' column from list back to space-separated string
 movies['genres'] = movies['genres'].apply(lambda x: ' '.join(x) if isinstance(x, list) else x)
-# Create a copy of movies dataframe for preprocessing
 movie_pre = movies.copy()
-# Replace '(no genres listed)' with an empty string
 movie_pre['genres'] = movie_pre['genres'].replace('(no genres listed)', '')
-# Replace pipe '|' characters with space in the genres string
 movie_pre['genres'] = movie_pre['genres'].str.replace('|', ' ')
 
 movie_pre
 
-"""## **b. Collaborative Filtering**"""
+"""Insight: Dengan menyatukan genre menjadi format teks bebas, kita dapat menerapkan teknik Natural Language Processing seperti TF-IDF untuk menemukan kesamaan antar film berdasarkan genre, yang akan sangat berguna untuk sistem rekomendasi konten serupa (content-based filtering).
 
-# Drop unnecessary columns: Timestamp
+Kode ini menggunakan TfidfVectorizer dari sklearn untuk mengubah teks genre pada setiap film menjadi representasi numerik berupa matriks TF-IDF. Setiap genre diperlakukan sebagai kata dalam dokumen, dan bobotnya mencerminkan pentingnya genre tersebut dalam koleksi film.
+"""
+
+tfidf = TfidfVectorizer()
+tfidf_matrix = tfidf.fit_transform(movies['genres'])
+
+"""Insight: Matriks TF-IDF memungkinkan kita untuk mengukur kemiripan antara film berdasarkan genre dengan pendekatan matematis. Ini sangat berguna dalam content-based recommendation, di mana rekomendasi diberikan berdasarkan kesamaan konten (dalam hal ini genre) antar film.
+
+## **b. Collaborative Filtering**
+
+Kolom timestamp dihapus dari dataset ratings karena tidak digunakan dalam analisis atau model rekomendasi berbasis genre atau rating. Dilakukan untuk menyederhanakan data dan fokus hanya pada informasi yang relevan: userId, movieId, dan rating.
+"""
+
 ratings = ratings.drop(columns='timestamp')
 ratings.head()
 
-# Extract the list of unique users from the ratings dataset
+"""Insight: Pembersihan data seperti ini membantu mempercepat proses analisis dan menghindari kompleksitas yang tidak diperlukan. Timestamp bisa digunakan jika kita ingin menganalisis tren waktu, tetapi untuk rekomendasi dasar berbasis rating, kolom ini tidak esensial.
+
+Kode ini mengambil daftar user dan film unik dari dataset ratings dengan menggunakan drop_duplicates() dan mengubahnya menjadi list. Merupakan sebuah langkah persiapan untuk membangun matriks interaksi antara pengguna dan film.
+"""
+
 unique_users = ratings['userId'].drop_duplicates().tolist()
-# Extract the list of unique movies from the ratings dataset
 unique_movies = ratings['movieId'].drop_duplicates().tolist()
 
-# Create dictionaries to map original userId and movieId to integer indices
+"""Insight: Dengan mengetahui jumlah user dan movie unik, kita dapat membangun struktur data seperti matriks user-item yang penting untuk metode collaborative filtering. Langkah ini juga membantu memahami skala data dan mempersiapkan model rekomendasi berbasis interaksi pengguna.
+
+Kode ini membuat dua dictionary: user_mapping dan movie_mapping yang memetakan userId dan movieId asli ke indeks numerik mulai dari nol. Penting untuk konversi data ke format yang bisa digunakan dalam model machine learning, khususnya model berbasis matriks atau embedding.
+"""
+
 user_mapping = {user_id: idx for idx, user_id in enumerate(unique_users)}
 movie_mapping = {movie_id: idx for idx, movie_id in enumerate(unique_movies)}
 
-# Apply the mapping dictionaries to the ratings dataframe to create new columns with integer indices
+"""Insight: Banyak model machine learning, terutama deep learning dan matrix factorization, membutuhkan input dalam bentuk indeks integer. Dengan memetakan ID ke indeks, kita memastikan efisiensi pemrosesan dan kompatibilitas dengan struktur seperti matriks interaksi atau layer embedding.
+
+Kode ini menerapkan dictionary mapping yang telah dibuat untuk mengubah userId dan movieId dalam dataset ratings menjadi kolom baru user_index dan movie_index berupa nilai integer.
+"""
+
 ratings['user_index'] = ratings['userId'].apply(lambda x: user_mapping[x])
 ratings['movie_index'] = ratings['movieId'].apply(lambda x: movie_mapping[x])
 
-# Find the minimum and maximum rating values
+"""Insight: Dengan mengganti ID asli ke indeks numerik, kita mempersiapkan data untuk digunakan dalam model-model seperti matrix factorization atau neural collaborative filtering. Pendekatan ini juga memudahkan dalam indexing array dan penggunaan layer embedding dalam deep learning.
+
+Kode ini menghitung nilai minimum dan maksimum dari kolom rating, lalu menggunakan fungsi min-max normalization untuk mengubah nilai rating ke dalam skala 0 hingga 1. Hasilnya disimpan dalam kolom baru rating_normalized.
+"""
+
 min_rating = ratings['rating'].min()
 max_rating = ratings['rating'].max()
-
-# Normalize the 'rating' column to a scale from 0 to 1
 def normalize_rating(r):
     return (r - min_rating) / (max_rating - min_rating)
 ratings['rating_normalized'] = ratings['rating'].map(normalize_rating)
 
-# Shuffle the dataset to ensure random distribution of samples
+"""Insight: Normalisasi penting untuk model machine learning agar semua fitur berada dalam skala yang seragam. Dalam konteks sistem rekomendasi, ini sangat berguna terutama untuk algoritma berbasis neural network yang sensitif terhadap skala input.
+
+Dataset ratings diacak menggunakan sample() agar distribusi data acak dan tidak bias berdasarkan urutan awal. Fitur input berupa user_index dan movie_index, sedangkan target output adalah rating_normalized. Dataset dibagi menjadi 80% data latih dan 20% data validasi.
+"""
+
 shuffled_ratings = ratings.sample(frac=1, random_state=42).reset_index(drop=True)
-# Extract input features: user and movie indices
 features = shuffled_ratings[['user_index', 'movie_index']].to_numpy()
-# Extract target output: normalized ratings
 targets = shuffled_ratings['rating_normalized'].to_numpy()
-# Calculate the cutoff index for 80% training data
 train_cutoff = int(0.8 * len(shuffled_ratings))
-# Split data into training and validation sets
 X_train = features[:train_cutoff]
 X_val = features[train_cutoff:]
 y_train = targets[:train_cutoff]
@@ -225,52 +316,63 @@ y_val = targets[train_cutoff:]
 print(f"Training data size: {X_train.shape[0]}")
 print(f"Validation data size: {X_val.shape[0]}")
 
-"""# **5. Model Development**
+"""Insight: Pembagian data untuk data latih didapat sebesar 80668 dan data validasi sebesar 20168. Shuffling mencegah urutan data memengaruhi proses pelatihan. Pembagian data ini memastikan bahwa model dilatih pada data yang beragam dan diuji pada subset yang tidak pernah dilihat sebelumnya, menjaga validitas evaluasi model.
+
+# **5. Model Development**
 
 ## **a. Content Based Filtering**
+
+Kode ini menggunakan matriks fitur TF-IDF yang dihasilkan dari kolom genres, lalu menghitung cosine similarity antar semua pasangan film menggunakan fungsi cosine_similarity dari Scikit-learn. Hasilnya adalah matriks kesamaan antar film berdasarkan kemiripan genre.
 """
 
-# Initialize TF-IDF vectorizer
-tfidf = TfidfVectorizer()
-# Fit and transform the 'genres' column to create a TF-IDF feature matrix
-tfidf_matrix = tfidf.fit_transform(movies['genres'])
-
-# Calculate cosine similarity between all movie genre vectors
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# Recommend movies similar to a given movie based on genre similarity
-def recommend_movies(movie_title, movies=movies, cosine_sim=cosine_sim, top_n=10):
-    # Find the index of the movie that matches the title
-    idx = movies[movies['title'] == movie_title].index[0]
-    # Get similarity scores for this movie with all others
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    # Sort movies by similarity score in descending order, excluding the movie itself
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n+1]
-    # Get the indices of the top N similar movies
-    movie_indices = [i[0] for i in sim_scores]
-    # Return the titles and genres of the recommended movies
-    return movies.iloc[movie_indices][['title', 'genres']]
+"""Insight: Cosine similarity memberikan ukuran seberapa mirip dua film berdasarkan representasi vektornya. Berguna untuk sistem rekomendasi berbasis konten (content-based filtering), di mana film yang memiliki genre serupa dapat direkomendasikan satu sama lain.
 
-# Content-Based Movie Recommendation Testing
-recommend_movies('Toy Story (1995)', top_n=10)
-
-"""## **b. Collaborative Filtering**
-
-### **1. RecommenderNet**
+Fungsi recommend_movies() menerima input berupa judul film, lalu mencari film-film lain yang memiliki genre paling mirip berdasarkan cosine similarity. Film dengan skor tertinggi (selain dirinya sendiri) dikembalikan sebagai rekomendasi sebanyak top_n.
 """
 
-# RecommenderNet: Neural Collaborative Filtering model using embeddings
-#
-# This model learns latent factors for users and movies via embedding layers,
-# includes user and movie bias terms, and applies dropout regularization.
-# The output is a predicted rating (normalized between 0 and 1) via a sigmoid activation.
-#
-# Inputs:
-#   - inputs: Tensor of shape (batch_size, 2), where inputs[:, 0] is user indices,
-#             and inputs[:, 1] is movie indices.
-#
-# Output:
-#   - Tensor of predicted ratings in (0,1).
+def recommend_movies(movie_title, movies=movies, cosine_sim=cosine_sim, top_n=10):
+    idx = movies[movies['title'] == movie_title].index[0]
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n+1]
+    movie_indices = [i[0] for i in sim_scores]
+    return movies.iloc[movie_indices][['title', 'genres']]
+
+"""Insight: Ini adalah implementasi sederhana dari sistem rekomendasi berbasis konten. Pendekatan ini berguna jika pengguna menyukai satu film dan ingin mendapatkan saran film lain yang mirip dari sisi genre, tanpa melihat histori rating pengguna lain.
+
+Kode ini merupakan bagian untuk melakukan inferensi pada sistem rekomendasi film berdasarkan pada Content Based Filtering yang mana akan menampilkan Top 10 Film berdasarkan pada kesamaan Genre.
+"""
+
+recommend_movies('Toy Story (1995)', top_n=10)
+
+"""Insight: Fungsi recommend_movies() berhasil menghasilkan 10 film yang memiliki kemiripan tinggi terhadap film Toy Story (1995) berdasarkan genre. Semua film yang direkomendasikan memiliki kombinasi genre yang sama: Adventure | Animation | Children | Comedy | Fantasy. Sistem rekomendasi ini bekerja dengan baik dalam mengidentifikasi film-film yang serupa secara tematik. Hasil yang diberikan konsisten, menunjukkan bahwa pendekatan cosine similarity terhadap genre yang ditransformasikan menggunakan TF-IDF cukup efektif untuk rekomendasi berbasis konten. Cocok digunakan jika histori pengguna masih minim (cold start).
+
+## **b. Collaborative Filtering**
+
+### **1. RecommenderNet**
+
+Model RecommenderNet dirancang untuk memprediksi rating dari user terhadap film tertentu dengan memanfaatkan pendekatan embedding dan regularisasi dropout. Berikut detail komponennya:
+
+**Input:**
+- 2D tensor berisi [user_index, movie_index] untuk setiap pasangan user-movie.
+
+**Embedding Layers:**
+- user_emb: Menyandikan setiap user sebagai vektor dimensi laten.
+- movie_emb: Menyandikan setiap movie sebagai vektor dimensi laten.
+- user_bias_emb dan movie_bias_emb: Bias individual untuk user dan movie.
+
+**Dropout Regularization:**
+- Diterapkan pada vektor embedding user dan movie untuk mencegah overfitting.
+
+**Interaction Mechanism:**
+- Produk dot antara embedding user dan movie menangkap interaksi laten.
+- Ditambahkan bias user dan movie untuk meningkatkan akurasi prediksi.
+
+**Output:**
+- Nilai rating hasil prediksi dalam rentang 0–1 (karena sigmoid activation), cocok karena rating sudah dinormalisasi.
+"""
+
 class RecommenderNet(tf.keras.Model):
     def __init__(self, total_users, total_movies, embed_dim, **kwargs):
         super().__init__(**kwargs)
@@ -278,7 +380,6 @@ class RecommenderNet(tf.keras.Model):
         self.total_movies = total_movies
         self.embed_dim = embed_dim
 
-        # User embedding and bias
         self.user_emb = layers.Embedding(
             input_dim=total_users,
             output_dim=embed_dim,
@@ -287,7 +388,6 @@ class RecommenderNet(tf.keras.Model):
         )
         self.user_bias_emb = layers.Embedding(total_users, 1)
 
-        # Movie embedding and bias
         self.movie_emb = layers.Embedding(
             input_dim=total_movies,
             output_dim=embed_dim,
@@ -296,7 +396,6 @@ class RecommenderNet(tf.keras.Model):
         )
         self.movie_bias_emb = layers.Embedding(total_movies, 1)
 
-         # Dropout for regularization
         self.dropout = layers.Dropout(0.2)
 
     def call(self, inputs, training=False):
@@ -312,23 +411,28 @@ class RecommenderNet(tf.keras.Model):
         output = interaction + user_bias + movie_bias
         return tf.nn.sigmoid(output)
 
-# Initialize the RecommenderNet model
-model = RecommenderNet(total_users=len(user_mapping), total_movies=len(movie_mapping), embed_dim=6)
+"""Insight: Model ini sangat fleksibel dan mampu menangkap pola kompleks antara user dan item melalui latent features. Dengan pendekatan ini, kita bisa menyarankan film bahkan jika mereka belum pernah ditonton sebelumnya oleh user (karena embedding belajar representasi umum). Memungkinkan training menggunakan mini-batch dan optimisasi end-to-end. Bisa diperluas ke model hybrid dengan menggabungkan konten genre atau metadata sebagai input tambahan.
 
-# Compile the model
+Pada tahap ini, model RecommenderNet diinisialisasi dengan total jumlah pengguna dan film yang sudah dipetakan ke indeks numerik, serta dimensi embedding sebesar 6. Model ini menggunakan embedding untuk belajar representasi laten pengguna dan film dalam ruang berdimensi rendah. Setelah inisialisasi, model dikompilasi menggunakan optimizer Adam dengan learning rate 0.001, fungsi loss mean squared error, dan metrik evaluasi Root Mean Squared Error (RMSE).
+"""
+
+model = RecommenderNet(total_users=len(user_mapping), total_movies=len(movie_mapping), embed_dim=6)
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
     loss='mean_squared_error',
     metrics=[tf.keras.metrics.RootMeanSquaredError()]
 )
 
-# EarlyStopping callback to stop training when validation loss stops improving
+"""Insight: Penggunaan embedding memungkinkan model menangkap pola interaksi kompleks antara pengguna dan film secara efisien. Kompilasi dengan MSE dan RMSE cocok untuk tugas prediksi rating numerik yang dinormalisasi. Pengaturan ini menjadi fondasi penting agar model dapat belajar secara stabil dan menghasilkan prediksi rating yang akurat di tahap pelatihan berikutnya.
+
+Pada tahap ini, dua callback penting diterapkan selama pelatihan model. Pertama, EarlyStopping berfungsi untuk menghentikan pelatihan secara otomatis apabila nilai loss pada data validasi tidak membaik selama dua epoch berturut-turut, sekaligus mengembalikan bobot model terbaik yang ditemukan. Kedua, ReduceLROnPlateau akan menurunkan learning rate menjadi setengahnya jika validasi loss stagnan selama dua epoch, membantu model keluar dari titik minimum lokal.
+"""
+
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='val_loss',
     patience=2,
     restore_best_weights=True
 )
-# ReduceLROnPlateau callback to reduce learning rate when validation loss plateaus
 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
     monitor='val_loss',
     factor=0.5,
@@ -336,7 +440,11 @@ reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
     verbose=1
 )
 
-# Training the RecommenderNet model
+"""Insight: Callbacks ini membantu meningkatkan efisiensi pelatihan dan mencegah overfitting dengan menghindari pelatihan berlebih. Penyesuaian learning rate otomatis juga mempercepat konvergensi model ke solusi optimal, sehingga kualitas prediksi rating dapat meningkat tanpa harus melakukan tuning manual yang intensif.
+
+Model RecommenderNet dilatih menggunakan data pelatihan dengan batch size 64 selama maksimal 25 epoch, sambil memantau performa pada data validasi. Callback EarlyStopping dan ReduceLROnPlateau diterapkan untuk mengoptimalkan proses pelatihan, menghentikan pelatihan lebih awal jika tidak terjadi perbaikan, dan menyesuaikan learning rate secara dinamis.
+"""
+
 history_recommenderNet = model.fit(
     X_train, y_train,
     batch_size=64,
@@ -346,39 +454,31 @@ history_recommenderNet = model.fit(
     callbacks=[early_stopping, reduce_lr]
 )
 
-# Function to get top-N movie recommendations for a given user using the trained model
+"""Insight: Pada epoch ke-18, ReduceLROnPlateau menurunkan learning rate menjadi sangat kecil (3.125e-05) untuk mencoba mengatasi stagnasi penurunan loss. Model mencapai nilai root mean squared error (RMSE) sekitar 0.1655 pada data pelatihan dan 0.1897 pada data validasi, yang menunjukkan performa prediksi yang cukup baik dengan error yang relatif kecil. Penurunan learning rate pada titik ini membantu model melakukan fine-tuning yang lebih halus agar tidak melewatkan minimum loss yang lebih baik. Perbedaan RMSE antara training dan validation yang kecil mengindikasikan bahwa model tidak mengalami overfitting signifikan, sehingga diperkirakan dapat memberikan rekomendasi rating film yang cukup akurat pada pengguna baru.
+
+Fungsi get_top_n_recommendations dibuat untuk menghasilkan daftar 10 film yang direkomendasikan untuk pengguna dengan user_id=3 pada kode tersebut berdasarkan prediksi rating tertinggi dari model. Fungsi ini memanfaatkan embedding yang dipelajari model untuk memprediksi preferensi pengguna pada seluruh film, kemudian memilih yang memiliki skor rating terprediksi terbaik.
+"""
+
 def get_top_n_recommendations(model, user_id, movie_ids, movies_df, N=10):
-    # Create an array where user_id repeats for each movie
     user_array = np.array([user_id] * len(movie_ids))
-    # Stack user and movie indices to create input pairs for the model
     input_array = np.stack([user_array, movie_ids], axis=1)
-    # Predict ratings for all movies for this user
     predictions = model.predict(input_array, verbose=0).flatten()
-    # Get indices of top N predicted ratings, sorted descending
     top_indices = np.argsort(predictions)[::-1][:N]
-    # Extract movie IDs and predicted scores for the top N movies
     top_movie_ids = movie_ids[top_indices]
     top_scores = predictions[top_indices]
-    # Filter movies DataFrame to include only the top recommended movies
     top_movies = movies_df[movies_df['movieId'].isin(top_movie_ids)].copy()
-    # Add predicted score (normalized 0-1)
     top_movies['predicted_score'] = top_movies['movieId'].map(dict(zip(top_movie_ids, top_scores)))
-    # Convert predicted scores back to rating scale 1-5
     top_movies['predicted_rating'] = top_movies['predicted_score'] * 4 + 1
-    # Sort movies by predicted rating descending and reset index for ranking
     top_movies = top_movies.sort_values(by='predicted_rating', ascending=False).reset_index(drop=True)
-    top_movies.index += 1  # Start rank index at 1
-    # Return movieId, title, and predicted_rating
+    top_movies.index += 1
     return top_movies[['movieId', 'title', 'predicted_rating']]
 
-# Example usage
 user_id = 3
 all_movie_ids = movies['movieId'].values
 top_n = 10
 top_recommendations_df = get_top_n_recommendations(model, user_id, all_movie_ids, movies, top_n)
 print(top_recommendations_df)
 
-# Tweet-style output of top recommendations
 tweet_lines = [f"User {user_id} Top-{top_n} Movie Recommendations:"]
 for rank, row in top_recommendations_df.iterrows():
     tweet_lines.append(f"{rank}. {row['title']} (ID: {row['movieId']}) - Predicted Rating: {row['predicted_rating']:.2f}")
@@ -386,28 +486,19 @@ tweet_text = "\n".join(tweet_lines)
 print("\n--- Top 10 Movie Recommendations ---")
 print(tweet_text)
 
-"""### **2. Neural Collaborative Filtering (NCF)**"""
+"""Insight: Rekomendasi film yang diberikan model menunjukkan keragaman genre dan era, yang mengindikasikan bahwa model berhasil menangkap preferensi pengguna secara mendalam tanpa bergantung hanya pada popularitas atau genre tertentu. Hal ini memperkuat keunggulan metode collaborative filtering berbasis embedding dalam mengenali pola preferensi laten yang tidak langsung terlihat dari metadata film. Selain itu, skor rating yang cukup tinggi pada film-film rekomendasi menunjukkan model mampu memprediksi minat pengguna dengan akurasi yang baik, sehingga dapat meningkatkan pengalaman pengguna dengan memberikan pilihan film yang relevan dan personal.
 
-# NeuralCollaborativeFiltering: Neural Collaborative Filtering model using embeddings and dense layers
-#
-# This model learns latent factors for users and movies via embedding layers,
-# concatenates the embeddings, and passes them through fully connected layers
-# with batch normalization, dropout, and L2 regularization.
-# The output is a predicted rating (normalized between 0 and 1) via a sigmoid activation.
-#
-# Inputs:
-#   - inputs: list or tuple of two tensors: user indices and movie indices, each of shape (batch_size,)
-#
-# Output:
-#   - Tensor of predicted ratings in (0,1).
+### **2. Neural Collaborative Filtering (NCF)**
+
+Model Neural Collaborative Filtering (NCF) ini menggabungkan embedding pengguna dan film sebagai representasi laten, lalu mengkonsolidasikannya melalui beberapa lapisan dense dengan batch normalization dan dropout untuk mengurangi overfitting. Pendekatan ini memungkinkan model menangkap interaksi kompleks antara pengguna dan item yang tidak bisa dideteksi hanya dengan perkalian dot product seperti di model RecommenderNet sebelumnya. Outputnya adalah prediksi rating yang dinormalisasi menggunakan fungsi aktivasi sigmoid.
+"""
+
 num_users = len(user_mapping)
 num_items = len(movie_mapping)
 embedding_dim = 8
-# Input layers
 user_input = layers.Input(shape=(), dtype=tf.int32, name='user_input')
 item_input = layers.Input(shape=(), dtype=tf.int32, name='item_input')
 
-# Embedding layers with regularization
 user_embedding = layers.Embedding(
     input_dim=num_users,
     output_dim=embedding_dim,
@@ -422,22 +513,18 @@ item_embedding = layers.Embedding(
     name='item_embedding'
 )(item_input)
 
-# Concatenate embedding
 user_vec = layers.Flatten()(user_embedding)
 item_vec = layers.Flatten()(item_embedding)
 concat = layers.Concatenate()([user_vec, item_vec])
 
-# Fully connected layers with dropout and L2 regularization
 x = layers.Dense(64, activation='relu', kernel_regularizer=regularizers.l2(1e-6))(concat)
 x = layers.BatchNormalization()(x)
 x = layers.Activation('relu')(x)
 x = layers.Dropout(0.2)(x)
 x = layers.Dense(32, activation='relu', kernel_regularizer=regularizers.l2(1e-6))(x)
 
-# Output layer
 output = layers.Dense(1, activation='sigmoid')(x)
 
-# Define model
 model_ncf = Model(inputs=[user_input, item_input], outputs=output)
 model_ncf.compile(
     optimizer=optimizers.Adam(learning_rate=0.001),
@@ -445,11 +532,20 @@ model_ncf.compile(
     metrics=[tf.keras.metrics.RootMeanSquaredError()]
 )
 
-# Separate users and items for training and validation
+"""Insight: Dengan menggunakan arsitektur fully connected yang lebih dalam, NCF dapat mempelajari pola interaksi yang lebih kompleks dan non-linear antara pengguna dan film, sehingga berpotensi memberikan rekomendasi yang lebih akurat dan personalisasi lebih baik dibandingkan model sederhana berbasis embedding saja. Regularisasi L2, batch normalization, dan dropout membantu menjaga kestabilan pelatihan dan mencegah overfitting, yang sangat penting dalam data rekomendasi yang seringkali sparse dan bervariasi.
+
+Pada tahap ini, data fitur yang berisi indeks pengguna dan film dipisahkan menjadi dua variabel terpisah untuk pengguna dan film, baik untuk data pelatihan maupun validasi. Diperlukan karena model Neural Collaborative Filtering (NCF) mengharapkan inputnya berupa dua tensor terpisah: satu untuk user indices dan satu lagi untuk movie indices.
+"""
+
 X_train_user = X_train[:, 0]
 X_train_item = X_train[:, 1]
 X_val_user = X_val[:, 0]
 X_val_item = X_val[:, 1]
+
+"""Insight: Memisahkan input seperti ini membuat data lebih sesuai dengan arsitektur model NCF yang menggunakan input paralel, sehingga dapat mengoptimalkan proses embedding dan pemodelan interaksi antara pengguna dan film secara lebih efektif. Pendekatan ini juga memudahkan pengelolaan data saat melatih dan mengevaluasi model.
+
+Pada tahap ini, dua callback penting diterapkan selama pelatihan model. Pertama, EarlyStopping berfungsi untuk menghentikan pelatihan secara otomatis apabila nilai loss pada data validasi tidak membaik selama dua epoch berturut-turut, sekaligus mengembalikan bobot model terbaik yang ditemukan. Kedua, ReduceLROnPlateau akan menurunkan learning rate menjadi setengahnya jika validasi loss stagnan selama dua epoch, membantu model keluar dari titik minimum lokal.
+"""
 
 # EarlyStopping callback to stop training when validation loss stops improving
 early_stopping = tf.keras.callbacks.EarlyStopping(
@@ -465,6 +561,11 @@ reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
     verbose=1
 )
 
+"""Insight: Callbacks ini membantu meningkatkan efisiensi pelatihan dan mencegah overfitting dengan menghindari pelatihan berlebih. Penyesuaian learning rate otomatis juga mempercepat konvergensi model ke solusi optimal, sehingga kualitas prediksi rating dapat meningkat tanpa harus melakukan tuning manual yang intensif.
+
+Pada tahap ini, model Neural Collaborative Filtering (NCF) dilatih menggunakan data pelatihan yang sudah dipisahkan antara input pengguna dan film. Proses pelatihan dilakukan selama maksimal 30 epoch dengan batch size 64, serta menggunakan callback seperti EarlyStopping untuk menghentikan pelatihan lebih awal jika validasi loss tidak membaik, dan ReduceLROnPlateau untuk menyesuaikan learning rate secara adaptif. Data validasi juga digunakan untuk memantau performa model di setiap epoch.
+"""
+
 # Training the Neural Collaborative Filtering model
 history_ncf = model_ncf.fit(
     [X_train_user, X_train_item], y_train,
@@ -475,30 +576,26 @@ history_ncf = model_ncf.fit(
     callbacks=[early_stopping, reduce_lr]
 )
 
-# Generate top-N movie recommendations for a given user using a trained NCF model.
+"""Insight: Pada epoch 4, learning rate diturunkan secara signifikan oleh ReduceLROnPlateau karena validasi loss mulai stagnan. Penurunan learning rate ini memungkinkan model untuk melakukan update bobot dengan langkah yang lebih kecil, sehingga bisa lebih halus menyesuaikan parameter dan menghindari overshooting. Meskipun loss dan RMSE pada validasi masih sedikit lebih tinggi dibandingkan training, penyesuaian ini membantu model mendekati performa optimal secara bertahap.
+
+Fungsi ini digunakan untuk menghasilkan rekomendasi film terbaik untuk satu pengguna berdasarkan model Neural Collaborative Filtering yang sudah dilatih. Pertama, fungsi membuat array berisi ID pengguna yang sama sepanjang jumlah film, agar bisa dipasangkan dengan semua indeks film. Selanjutnya, model melakukan prediksi rating untuk semua pasangan pengguna-film tersebut. Dari hasil prediksi ini, dipilih N film dengan rating tertinggi. Setelah mendapatkan indeks film dengan rating terbaik, fungsi mengubah indeks embedding kembali ke ID film asli menggunakan movie_mapping. Kemudian, data film yang direkomendasikan diambil dari DataFrame movies_df, dan ditambahkan kolom skor prediksi (0-1) serta konversi skor menjadi rating dengan skala 0-5. Hasil akhirnya adalah daftar film teratas yang diurutkan berdasarkan rating prediksi, siap ditampilkan atau digunakan untuk rekomendasi personal.
+"""
+
 def get_top_n_recommendations_ncf(model, user_id, movie_indices, movies_df, movie_mapping, N=10):
-    # Create an array with the same user_id repeated for all movies
     user_array = np.array([user_id] * len(movie_indices))
-    # Predict ratings using the NCF model
     predictions = model_ncf.predict([user_array, movie_indices], verbose=0).flatten()
-    # Get indices of top-N highest predicted ratings
     top_indices = np.argsort(predictions)[::-1][:N]
     top_movie_indices = movie_indices[top_indices]
     top_scores = predictions[top_indices]
-    # Map embedding indices back to original movie IDs
     index_to_movie = {idx: mid for mid, idx in movie_mapping.items()}
     top_movie_ids = [index_to_movie[idx] for idx in top_movie_indices]
-    # Select movies from movies_df corresponding to top movie IDs
     top_movies = movies_df[movies_df['movieId'].isin(top_movie_ids)].copy()
-    # Add columns for predicted score (0-1) and convert to rating scale 0-5
     top_movies['predicted_score'] = top_movies['movieId'].map(dict(zip(top_movie_ids, top_scores)))
     top_movies['predicted_rating'] = top_scores * 5.0
-     # Sort movies by predicted_rating descending and reset index starting from 1
     top_movies = top_movies.sort_values(by='predicted_rating', ascending=False).reset_index(drop=True)
     top_movies.index += 1
     return top_movies[['movieId', 'title', 'predicted_rating']]
 
-# Example usage
 user_id = 12
 movie_indices = np.array(list(movie_mapping.values()))
 top_n = 10
@@ -507,7 +604,6 @@ top_recommendations_df = get_top_n_recommendations_ncf(
 )
 print(top_recommendations_df)
 
-# Tweet-style output of top recommendations
 tweet_lines = [f"User {user_id} Top-{top_n} Movie Recommendations:"]
 for rank, row in top_recommendations_df.iterrows():
     tweet_lines.append(f"{rank}. {row['title']} (ID: {row['movieId']}) - Predicted Rating: {row['predicted_rating']:.2f}")
@@ -515,11 +611,14 @@ tweet_text = "\n".join(tweet_lines)
 print("\n--- Top 10 Movie Recommendations ---")
 print(tweet_text)
 
-"""# **6. Model Evaluation**"""
+"""Insight: Model Neural Collaborative Filtering (NCF) ini berhasil memberikan rekomendasi film dengan prediksi rating tinggi untuk pengguna tertentu. Film-film teratas seperti Shawshank Redemption dan Dr. Strangelove menunjukkan bahwa model mampu menangkap preferensi pengguna terhadap film-film berkualitas dan populer, meskipun tidak secara eksplisit menggunakan fitur genre atau konten. Ini membuktikan efektivitas latent factors yang dipelajari dari interaksi pengguna-film melalui embedding dan lapisan dense dalam memahami pola preferensi. Selain itu, prediksi rating yang konsisten tinggi di rentang sekitar 4.5 hingga 4.7 pada skala 5 menunjukkan model memberikan rekomendasi dengan confidence yang baik. Pendekatan ini cocok untuk skenario dengan data historis rating pengguna yang cukup karena model dapat menangkap interaksi kompleks antar pengguna dan item, memberikan personalisasi yang lebih kuat dibandingkan metode content-based sederhana.
 
-# Plot training and validation loss for both models side by side
+# **6. Model Evaluation**
+
+Kode ini membuat visualisasi perbandingan performa pelatihan dua model rekomendasi, yaitu RecommenderNet dan Neural Collaborative Filtering (NCF), dengan menampilkan grafik loss (kerugian) selama proses training dan validasi.
+"""
+
 plt.figure(figsize=(12,5))
-# Plot loss for RecommenderNet
 plt.subplot(1,2,1)
 plt.plot(history_recommenderNet.history['loss'], label='RecommenderNet Train Loss')
 plt.plot(history_recommenderNet.history['val_loss'], label='RecommenderNet Val Loss')
@@ -527,7 +626,6 @@ plt.title('RecommenderNet Loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
-# Plot loss for Neural Collaborative Filtering (NCF)
 plt.subplot(1,2,2)
 plt.plot(history_ncf.history['loss'], label='NCF Train Loss')
 plt.plot(history_ncf.history['val_loss'], label='NCF Val Loss')
@@ -538,27 +636,26 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-# Predict ratings for validation set and rescale predictions
-# Predict with RecommenderNet
+"""Insight: Model RecommenderNet menunjukkan penurunan loss yang stabil selama 17 epoch dengan validation loss yang cenderung stagnan, menandakan model belajar dengan baik tanpa overfitting signifikan namun mencapai batas optimalnya. Sebaliknya, model Neural Collaborative Filtering (NCF) hanya bertahan 4 epoch sebelum early stopping karena validation loss mulai meningkat, mengindikasikan overfitting lebih cepat kemungkinan akibat arsitektur yang lebih kompleks.
+
+Kode ini membandingkan performa prediksi rating dari model RecommenderNet dan Neural Collaborative Filtering (NCF) pada data validasi. Prediksi dan nilai asli diubah dari skala 0–1 ke 1–5 agar mudah dipahami. Scatter plot dibuat untuk menampilkan prediksi versus nilai asli, dengan garis diagonal merah sebagai acuan prediksi sempurna. Plot ini membantu melihat seberapa akurat kedua model dalam memprediksi rating film berdasarkan kedekatan titik dengan garis tersebut.
+"""
+
 X_val_combined = np.column_stack((X_val[:, 0], X_val[:, 1]))
 y_pred_recommenderNet = model.predict(X_val_combined).flatten()
 y_true_recommenderNet = y_val.flatten()
 
-# Predict with Neural Collaborative Filtering (NCF)
 X_val_user = X_val[:, 0]
 X_val_item = X_val[:, 1]
 y_pred_ncf = model_ncf.predict([X_val_user, X_val_item]).flatten()
 y_true_ncf = y_val.flatten()
 
-# Rescale predictions and true values from [0,1] to [1,5]
 y_pred_recommenderNet = y_pred_recommenderNet * 4 + 1
 y_true_recommenderNet = y_true_recommenderNet * 4 + 1
 y_pred_ncf = y_pred_ncf * 4 + 1
 y_true_ncf = y_true_ncf * 4 + 1
 
-# Visualize Actual vs Predicted ratings
 plt.figure(figsize=(12, 5))
-# RecommenderNet plot
 plt.subplot(1, 2, 1)
 plt.scatter(y_true_recommenderNet, y_pred_recommenderNet, alpha=0.5, color='blue', label='Predicted vs Actual')
 plt.plot([1, 5], [1, 5], 'r--', label='Perfect Prediction')
@@ -567,7 +664,7 @@ plt.xlabel('Actual Rating')
 plt.ylabel('Predicted Rating')
 plt.legend()
 plt.grid(True)
-# Neural Collaborative Filtering plot
+
 plt.subplot(1, 2, 2)
 plt.scatter(y_true_ncf, y_pred_ncf, alpha=0.5, color='green', label='Predicted vs Actual')
 plt.plot([1, 5], [1, 5], 'r--', label='Perfect Prediction')
@@ -579,35 +676,42 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-# Calculate RMSE and MAE for RecommenderNet predictions
+"""Insight: Visualisasi Actual vs Predicted Ratings menunjukkan perbedaan perilaku kedua model. RecommenderNet (grafik kiri) mampu memprediksi rating tinggi (4–5) dengan cukup akurat meski cenderung melebihkan rating rendah (1–3). Sebaliknya, NCF (grafik kanan) memberikan prediksi yang lebih konservatif dan terkonsentrasi di rentang tengah (2.5–4.7), kurang mampu membedakan rating rendah dan tinggi, menandakan kemungkinan underfitting. Secara keseluruhan, RecommenderNet tampil lebih baik dalam menangkap variasi preferensi pengguna, terutama untuk rating tinggi yang penting dalam rekomendasi, sehingga lebih unggul dibanding NCF dalam kasus ini.
+
+Kode ini menghitung metrik evaluasi error untuk kedua model: RecommenderNet dan Neural Collaborative Filtering (NCF). RMSE (Root Mean Squared Error) mengukur rata-rata besarnya kesalahan prediksi dengan memberikan bobot lebih pada kesalahan besar, sedangkan MAE (Mean Absolute Error) mengukur rata-rata kesalahan absolut tanpa memperhatikan arah kesalahan. Nilai RMSE dan MAE yang lebih rendah menunjukkan performa model yang lebih baik dalam memprediksi rating pengguna.
+"""
+
 rmse_rec = np.sqrt(mean_squared_error(y_true_recommenderNet, y_pred_recommenderNet))
 mae_rec = mean_absolute_error(y_true_recommenderNet, y_pred_recommenderNet)
-# Calculate RMSE and MAE NCF predictions
+
 rmse_ncf = np.sqrt(mean_squared_error(y_true_ncf, y_pred_ncf))
 mae_ncf = mean_absolute_error(y_true_ncf, y_pred_ncf)
 print(f"RecommenderNet - RMSE: {rmse_rec:.4f}, MAE: {mae_rec:.4f}")
 print(f"Neural Collaborative Filtering - RMSE: {rmse_ncf:.4f}, MAE: {mae_ncf:.4f}")
 
-# Function for RecommenderNet
+"""Insight: Hasil evaluasi menunjukkan bahwa model RecommenderNet memiliki performa sedikit lebih baik dibanding Neural Collaborative Filtering (NCF). RecommenderNet mencatat RMSE sebesar 0.7587 dan MAE sebesar 0.5829, yang berarti prediksi ratingnya lebih akurat dan kesalahan rata-ratanya lebih kecil. Sebaliknya, NCF memiliki RMSE 0.7812 dan MAE 0.6060, menandakan kesalahan prediksi yang sedikit lebih besar. Meski perbedaan tidak terlalu besar, RecommenderNet tetap lebih unggul dalam memodelkan preferensi pengguna dan menghasilkan prediksi rating yang lebih dekat dengan nilai sebenarnya.
+
+Kode ini membandingkan rekomendasi film terbaik untuk seorang pengguna dari dua model berbeda, yaitu RecommenderNet dan Neural Collaborative Filtering (NCF). Kedua model memprediksi rating untuk semua film, lalu memilih 10 film dengan prediksi tertinggi untuk user tersebut. Hasil rekomendasi dari masing-masing model kemudian divisualisasikan dalam grafik batang horizontal, memperlihatkan perbandingan rating prediksi dari kedua model secara berdampingan. Dengan cara ini, kita dapat melihat perbedaan preferensi dan kekuatan masing-masing model dalam memberikan rekomendasi yang relevan untuk pengguna yang sama.
+"""
+
 def get_top_n_recommendations(model, user_id, all_movie_ids, movies_df, N=10):
     user_array = np.array([user_id] * len(all_movie_ids))
     predictions = model.predict(np.column_stack((user_array, all_movie_ids))).flatten()
     top_indices = np.argsort(predictions)[::-1][:N]
     top_movie_ids = all_movie_ids[top_indices]
-    top_scores = predictions[top_indices] * 5  # Asumsi skala 1-5
+    top_scores = predictions[top_indices] * 5
     top_movies = movies_df[movies_df['movieId'].isin(top_movie_ids)].copy()
     top_movies['predicted_rating'] = top_movies['movieId'].map(dict(zip(top_movie_ids, top_scores)))
     top_movies = top_movies.sort_values(by='predicted_rating', ascending=False).reset_index(drop=True)
     top_movies.index += 1
     return top_movies[['movieId', 'title', 'predicted_rating']]
 
-# Function for NCF (Neural Collaborative Filtering)
 def get_top_n_recommendations_ncf(model_ncf, user_id, movie_indices, movies_df, movie_mapping, N=10):
     user_array = np.array([user_id] * len(movie_indices))
     predictions = model_ncf.predict([user_array, movie_indices], verbose=0).flatten()
     top_indices = np.argsort(predictions)[::-1][:N]
     top_movie_indices = movie_indices[top_indices]
-    top_scores = predictions[top_indices] * 5  # Asumsi skala 1-5
+    top_scores = predictions[top_indices] * 5
     index_to_movie = {v: k for k, v in movie_mapping.items()}
     top_movie_ids = [index_to_movie[idx] for idx in top_movie_indices]
     top_movies = movies_df[movies_df['movieId'].isin(top_movie_ids)].copy()
@@ -616,17 +720,14 @@ def get_top_n_recommendations_ncf(model_ncf, user_id, movie_indices, movies_df, 
     top_movies.index += 1
     return top_movies[['movieId', 'title', 'predicted_rating']]
 
-# Set the Target User
 user_id = 10
 all_movie_ids = movies['movieId'].values
 movie_indices = np.array(list(movie_mapping.values()))
 top_n = 10
 
-# Generate the Top 10 Recommendations
 top_n_rec_recommender = get_top_n_recommendations(model, user_id, all_movie_ids, movies, N=top_n)
 top_n_rec_ncf = get_top_n_recommendations_ncf(model_ncf, user_id, movie_indices, movies, movie_mapping, N=top_n)
 
-#  Visualization: Bar Chart Comparison
 titles_rec = top_n_rec_recommender['title'].values
 scores_rec = top_n_rec_recommender['predicted_rating'].values
 titles_ncf = top_n_rec_ncf['title'].values
@@ -643,3 +744,10 @@ plt.legend()
 plt.gca().invert_yaxis()
 plt.tight_layout()
 plt.show()
+
+"""Insight: Dari hasil observasi, kedua model merekomendasikan film yang sama, menunjukkan kesamaan dalam mengenali preferensi pengguna. Namun, prediksi rating NCF cenderung lebih tinggi dan seragam, menandakan underfitting dan kurang sensitif terhadap variasi preferensi. Sebaliknya, RecommenderNet memberikan prediksi dengan variasi yang lebih realistis dan akurat, sehingga lebih baik dalam membedakan kualitas film. Dengan demikian, meskipun urutan rekomendasi sama, RecommenderNet menunjukkan performa prediksi yang lebih berkualitas dibanding NCF.
+
+# **7. Conclusion**
+
+Dalam proyek ini, telah dikembangkan dan dibandingkan dua pendekatan model deep learning untuk sistem rekomendasi film, yaitu RecommenderNet dan Neural Collaborative Filtering (NCF). Berdasarkan evaluasi dengan metrik regresi seperti Root Mean Squared Error (RMSE) dan Mean Absolute Error (MAE), RecommenderNet menunjukkan performa yang sedikit lebih unggul dibandingkan NCF. Dari segi sebaran prediksi, RecommenderNet mampu menghasilkan prediksi yang lebih variatif dan lebih dekat ke nilai aktual, khususnya untuk rating tinggi, sementara NCF cenderung memprediksi dalam rentang sempit dan tinggi, menunjukkan gejala underfitting. Selain itu, meskipun urutan rekomendasi dari kedua model serupa, RecommenderNet memberikan estimasi rating yang lebih realistis, sehingga lebih bermanfaat dalam membedakan kualitas item yang direkomendasikan. Dengan demikian, RecommenderNet lebih direkomendasikan sebagai model utama dalam sistem rekomendasi ini, karena memberikan hasil yang lebih akurat dan interpretatif.
+"""
