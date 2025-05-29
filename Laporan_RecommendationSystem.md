@@ -103,15 +103,22 @@ Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Content Based 
     movie_pre['genres'] = movie_pre['genres'].replace('(no genres listed)', '')
     ```
 
--  **`Menghapus Simbol Pemisah`**: Langkah terakhir, karakter pemisah | yang ada di string genre diganti dengan spasi. Alasannya adalah untuk memudahkan proses pemisahan kata sehingga setiap genre dapat dikenali secara terpisah. Hal ini karena _TF-IDF_ membutuhkan _input_ berupa teks biasa tanpa simbol khusus agar fitur dapat diekstrak dengan benar.
+-  **`Menghapus Simbol Pemisah`**: Selanjutnya, karakter pemisah | yang ada di string genre diganti dengan spasi. Alasannya adalah untuk memudahkan proses pemisahan kata sehingga setiap genre dapat dikenali secara terpisah. Hal ini karena _TF-IDF_ membutuhkan _input_ berupa teks biasa tanpa simbol khusus agar fitur dapat diekstrak dengan benar.
     ```python
     # Replace pipe '|' characters with space in the genres string
     movie_pre['genres'] = movie_pre['genres'].str.replace('|', ' ')
     ```    
 Berikut adalah hasil dari tahap _Data Preparation_ yang telah dilakukan pada pendekatan _Content Based Filtering_:
 
-
 ![Movie_Pre](./assets/movie_pre.png)
+
+-  **`TF-IDF`**: Langkah terakhir, TF-IDF mengubah teks genre menjadi fitur numerik yang menunjukkan seberapa penting setiap kata genre dalam dataset. Dengan cara ini, model bisa mengenali pola genre secara efektif tanpa terganggu oleh kata yang sering muncul tapi kurang informatif.
+    ```python
+    # Initialize TF-IDF vectorizer
+    tfidf = TfidfVectorizer()
+    # Fit and transform the 'genres' column to create a TF-IDF feature matrix
+    tfidf_matrix = tfidf.fit_transform(movies['genres'])
+    ```
 
 ### **2. Collaborative Filtering**
 Berikut ini adalah beberapa tahap yang dilakukan pada pendekatan _Collaborative Filtering_ sebagai berikut:
@@ -178,10 +185,6 @@ Dalam tahap _modeling_, sistem rekomendasi dibangun untuk memberikan saran film 
 ### **1. Content Based Filtering**
 Model _Content-Based Filtering_ dibangun dengan menggunakan teknik _TF-IDF_ (Term Frequency-Inverse Document Frequency) untuk mengubah data genre film menjadi representasi numerik yang dapat dianalisis.
 ```python
-# Initialize TF-IDF vectorizer
-tfidf = TfidfVectorizer()
-# Fit and transform the 'genres' column to create a TF-IDF feature matrix
-tfidf_matrix = tfidf.fit_transform(movies['genres'])
 # Calculate cosine similarity between all movie genre vectors
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 # Recommend movies similar to a given movie based on genre similarity
@@ -199,7 +202,7 @@ def recommend_movies(movie_title, movies=movies, cosine_sim=cosine_sim, top_n=10
 # Content-Based Movie Recommendation Testing
 recommend_movies('Toy Story (1995)', top_n=10)
 ```
-Pertama, kolom genre film diolah menggunakan _TF-IDF Vectorizer_ untuk menghasilkan matriks fitur yang menggambarkan seberapa penting tiap kata genre pada setiap film. Selanjutnya, kemiripan antar film dihitung menggunakan _cosine similarity_ berdasarkan matriks _TF-IDF_ tersebut, sehingga menghasilkan skor kesamaan antara setiap pasangan film. Sistem rekomendasi ini kemudian menggunakan skor kemiripan tersebut untuk menyarankan film yang memiliki genre paling mirip dengan film input yang diberikan pengguna. Fungsi _recommend_movies_ mengambil judul film sebagai _input_ dan mengembalikan daftar top-N film rekomendasi yang paling mirip berdasarkan genre. Sebagai contoh, ketika diberikan film Toy Story (1995), sistem akan menampilkan 10 film dengan genre yang paling mirip sebagai rekomendasi.
+Pertama, kemiripan antar film dihitung menggunakan _cosine similarity_ berdasarkan matriks _TF-IDF_ tersebut, sehingga menghasilkan skor kesamaan antara setiap pasangan film. Sistem rekomendasi ini kemudian menggunakan skor kemiripan tersebut untuk menyarankan film yang memiliki genre paling mirip dengan film input yang diberikan pengguna. Fungsi _recommend_movies_ mengambil judul film sebagai _input_ dan mengembalikan daftar top-N film rekomendasi yang paling mirip berdasarkan genre. Sebagai contoh, ketika diberikan film Toy Story (1995), sistem akan menampilkan 10 film dengan genre yang paling mirip sebagai rekomendasi.
 
 ![TopN_ContentBasedFiltering](./assets/cbf_testing.png)
 
